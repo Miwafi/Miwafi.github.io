@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>短波无线电入门指南：从设备选型到全球监听 — WafiLog</title>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #fff;
+    color: #111;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.6;
+  }
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+  header {
+    padding: 48px 0 0;
+    text-align: center;
+  }
+  .site-title {
+    display: inline-block;
+    background: #111;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    padding: 10px 28px;
+    text-decoration: none;
+    transition: opacity .2s;
+  }
+  .site-title:hover { opacity: .8; }
+  nav {
+    margin-top: 24px;
+    display: flex;
+    justify-content: center;
+    gap: 2px;
+    font-size: 14px;
+  }
+  nav a {
+    color: #888;
+    text-decoration: none;
+    padding: 6px 16px;
+    transition: color .2s;
+  }
+  nav a:hover { color: #111; }
+
+  /* Article */
+  article {
+    padding: 48px 0 64px;
+  }
+  .article-header {
+    margin-bottom: 40px;
+  }
+  .article-title {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.35;
+    letter-spacing: .5px;
+  }
+  .article-meta {
+    font-size: 13px;
+    color: #bbb;
+    margin-top: 14px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 12px;
+  }
+  .article-content {
+    font-size: 16px;
+    color: #333;
+    line-height: 1.85;
+  }
+  .article-content h2 {
+    font-size: 21px;
+    font-weight: 700;
+    color: #111;
+    margin: 42px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #eee;
+  }
+  .article-content h3 {
+    font-size: 17px;
+    font-weight: 700;
+    color: #111;
+    margin: 32px 0 12px;
+  }
+  .article-content p {
+    margin-bottom: 16px;
+  }
+  .article-content ul, .article-content ol {
+    margin: 0 0 16px 20px;
+  }
+  .article-content li {
+    margin-bottom: 8px;
+  }
+  .article-content blockquote {
+    margin: 20px 0;
+    padding: 16px 20px;
+    background: #f9f9f9;
+    border-left: 3px solid #ddd;
+    color: #555;
+    font-style: normal;
+  }
+  .article-content blockquote p {
+    margin-bottom: 0;
+  }
+  .article-content strong {
+    color: #111;
+    font-weight: 700;
+  }
+  .article-content code {
+    font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+    font-size: 14px;
+    background: #f5f5f5;
+    padding: 2px 6px;
+    color: #111;
+  }
+  .back-link {
+    display: inline-block;
+    margin-top: 48px;
+    font-size: 14px;
+    color: #888;
+    text-decoration: none;
+    transition: color .2s;
+  }
+  .back-link:hover { color: #111; }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    padding: 32px 0 64px;
+    font-size: 12px;
+    color: #ccc;
+    border-top: 1px solid #f5f5f5;
+  }
+
+  @media (max-width: 520px) {
+    header { padding-top: 32px; }
+    .container { padding: 0 16px; }
+    .article-title { font-size: 22px; }
+    .article-content { font-size: 15px; }
+    .article-content h2 { font-size: 18px; }
+    article { padding: 32px 0 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a href="/" class="site-title">WAFILOG</a>
+  <nav>
+    <a href="/">首页</a>
+    <a href="/archives/">归档</a>
+  </nav>
+</header>
+
+<main class="container">
+  <article>
+    <div class="article-header">
+      <h1 class="article-title">短波无线电入门指南：从设备选型到全球监听</h1>
+      <div class="article-meta">
+        <span>2026-07-16</span>
+        <span>·</span>
+        <span>无线电</span>
+        <span>·</span>
+        <span>预计阅读 7 分钟</span>
+      </div>
+    </div>
+
+    <div class="article-content">
+
+      <p>短波（Shortwave，简称 SW）通常指 1.6 MHz 至 30 MHz 之间的无线电频率。与调频广播（FM）不同，短波信号可以利用电离层反射进行远距离传播（即天波传播），只需几十瓦的发射功率或一台普通的接收机，就能跨越数千公里接收到来自其他大洲的信号。这一特性使短波通信在广播、应急通信、航空航海、业余无线电等领域占据着不可替代的地位。</p>
+
+      <p>本文面向零基础读者，从频率划分、设备选型到首次收听实战，帮助你系统性地踏入短波无线电的世界。</p>
+
+      <h2>一、短波频率划分与常见业务</h2>
+
+      <p>国际电信联盟（ITU）将短波频段划分为多个业务子带。下表列出最常被业余爱好者和监听者关注的频段：</p>
+
+      <ul>
+        <li><strong>1.6 – 3.8 MHz (160m / 80m 段)</strong> — 夜间传播良好，适合本地和区域通信，常见业余电台和海事通信。</li>
+        <li><strong>3.8 – 7.0 MHz (40m 段)</strong> — 昼夜均可使用，夜间尤佳，是短波监听的热门频段。</li>
+        <li><strong>9.4 – 9.9 MHz (31m 段)</strong> — 国际广播专用段，BBC、VOA、NHK、中央人民广播电台等主要国际广播机构均在此段设台。</li>
+        <li><strong>11.6 – 12.1 MHz (25m 段)</strong> — 日间传播稳定，适合白天收听国际广播。</li>
+        <li><strong>13.6 – 13.8 MHz (22m 段)</strong> — 广播与固定通信混合使用。</li>
+        <li><strong>15.1 – 15.8 MHz (19m 段)</strong> — 日间国际广播主要频段之一，信号清晰。</li>
+        <li><strong>21.0 – 21.45 MHz (15m 段)</strong> — 业余电台与广播混合，太阳活动高年时传播极佳。</li>
+        <li><strong>24.89 – 29.7 MHz (12m / 10m 段)</strong> — 受太阳活动影响显著，开放时可用简单设备实现跨洋通联。</li>
+      </ul>
+
+      <p>掌握这些频段划分是短波监听的基石。新手可以先从 <strong>31m、25m、19m</strong> 三个国际广播段入手，因为这些频段信号强、内容稳定，最容易获得成就感。</p>
+
+      <h2>二、接收设备选型</h2>
+
+      <h3>2.1 RTL-SDR——最便宜的入门方案</h3>
+
+      <p>RTL-SDR 最初是为 DVB-T 电视棒设计的 RTL2832U 芯片方案，但被社区发现可用作宽带 SDR 接收机。优点是价格极低（约 50–100 元人民币），覆盖 24 – 1766 MHz（需直采模式才能覆盖短波）。缺点是缺少前置滤波，动态范围有限，容易过载，且短波直采模式下灵敏度偏低。</p>
+
+      <p>对于只想花几十元体验短波的新手，RTL-SDR + 长线天线 + SDR# / HDSDR 软件即可上路。主要局限是无法接收 SSB（单边带）和 CW（等幅报），需要额外添加下变频器（upconverter）才能较好地收听短波 SSB 信号。</p>
+
+      <h3>2.2 入门级短波接收机</h3>
+
+      <p>如果预算在 200–800 元之间，可以购买专门的短波接收机：</p>
+
+      <ul>
+        <li><strong>Tecsun PL-330 / PL-680</strong> — 德生（Tecsun）是国内最主流的短波收音机品牌。PL-330 约 250 元，支持 SSB、同步检波，可外接天线；PL-680 约 550 元，模拟调谐手感好，灵敏度优秀，是入门首选。</li>
+        <li><strong>XHDATA D-808</strong> — 约 400 元，支持航空波段、SSB，体积小巧，内置充电。</li>
+        <li><strong>Belka DSP</strong> — 白俄罗斯设计的小型 DSP 接收机，约 60 美元，性能出色，SSB 信号清晰，适合追求便携的用户。</li>
+      </ul>
+
+      <h3>2.3 进阶 SDR 方案</h3>
+
+      <p>如果预算超过 1000 元，可考虑以下 SDR 接收机，它们提供远优于 RTL-SDR 的灵敏度和选择性：</p>
+
+      <ul>
+        <li><strong>Airspy HF+ Discovery</strong> — 约 1700 元，噪声极低，短波性能一流，是目前最受推荐的 HF SDR 之一。</li>
+        <li><strong>SDRplay RSPdx / RSPduo</strong> — 约 1200–2000 元，覆盖完整短波频段，支持多天线输入。</li>
+        <li><strong>KiwiSDR</strong> — 约 300 美元，可独立运行的网络 SDR，接上天线即可通过浏览器远程收听，无需连接电脑。</li>
+      </ul>
+
+      <h3>2.4 收发一体机（业余无线电）</h3>
+
+      <p>如果未来打算考取业余电台操作证并发射，可以直接购买短波收发机：</p>
+
+      <ul>
+        <li><strong>Xiegu G90 / G106</strong> — 国产品牌，G90 约 2500 元，20W 输出，带天调，性价比极高。</li>
+        <li><strong>Yaesu FT-891</strong> — 约 5500 元，100W 输出，紧凑型车载机，接收性能优异。</li>
+        <li><strong>Icom IC-7300</strong> — 约 9000 元，带频谱瀑布图的中端标杆，使用体验接近 SDR。</li>
+      </ul>
+
+      <h2>三、天线——比接收机更重要</h2>
+
+      <p>对于短波接收而言，<strong>天线的质量往往比接收机的档次更关键</strong>。一条几百元的自制天线在性能上可以轻松胜过随机附带的劣质天线。</p>
+
+      <h3>3.1 长线天线（Random Wire）</h3>
+
+      <p>最简单的短波天线就是一截长导线。取 10–30 米长的多芯铜线（2.5 mm² 以上），从阳台引出，水平或斜拉至对面的支撑点。搭配一个 <strong>9:1 巴伦（balun）</strong> 进行阻抗变换，配合地线或接地桩，即可在多个频段上获得可接受的接收效果。</p>
+
+      <h3>3.2 偶极天线（Dipole）</h3>
+
+      <p>偶极天线是最经典的高效天线方案。总长度约为半波长（例如 40m 段约 20 米），水平架设。制作简单、噪声较低，推荐有庭院或楼顶空间的爱好者制作。缺点是需要两个足够高的支撑点。</p>
+
+      <h3>3.3 有源环形天线（Active Loop）</h3>
+
+      <p>若空间受限（如公寓阳台），可购买或自制有源小环天线。Wellbrook、Chameleon 等品牌有成品可选，也有大量 DIY 方案。环形天线的最大优势是 <strong>噪声低、方向性好</strong>，可以大幅压制城市电磁环境的人为噪声。</p>
+
+      <h2>四、首次收听实战</h2>
+
+      <p>准备好接收机和天线后，按以下步骤进行首次监听：</p>
+
+      <ol>
+        <li>选择一个信号较稳定的国际广播频段，例如 31m 段（9.4 – 9.9 MHz）。</li>
+        <li>将模式设为 <strong>AM</strong>，步进 5 kHz，缓慢扫描整个频段。日间通常 9.7 MHz 附近有较强的信号。</li>
+        <li>听到某个电台后，微调频率使声音最清晰。如果需要收听业余电台或航空通信，需切换至 <strong>LSB（下边带）或 USB（上边带）</strong> 模式。</li>
+        <li>记录频率、时间、电台名称和信号强度（S 表读数），养成做收听日志的习惯。</li>
+        <li>尝试在 <strong>14.0 – 14.35 MHz（20m 业余段）</strong> 收听全球业余电台的通联，注意 USB 模式。</li>
+      </ol>
+
+      <p>建议使用 <strong>WebSDR</strong> 资源（如 websdr.org）作为辅助工具——你可以在买设备之前就通过浏览器远程操控真实的短波接收机，提前感受短波的魅力。</p>
+
+      <h2>五、常见问题与提示</h2>
+
+      <ul>
+        <li><strong>为什么收不到信号？</strong> 首先检查天线是否连接好，其次确认时间和频段是否匹配（某些频段夜间才开放）。城市公寓中，来自开关电源、LED 灯、路由器的电磁干扰（QRM）是主要障碍，建议使用环形天线或加装噪声消除器。</li>
+        <li><strong>SSB 与 AM 有何区别？</strong> AM 广播信号音量大、带宽较宽，适合收听广播节目；SSB 信号较为低沉（"鸭子声"），需要精确调谐才能听清，广泛用于业余电台和航空通信。</li>
+        <li><strong>是否需要考执照？</strong> 仅监听（收听）不需要任何执照。如果你希望发射和通联，则必须考取对应国家的业余电台操作证书。</li>
+      </ul>
+
+      <h2>六、推荐资源</h2>
+
+      <ul>
+        <li><strong>Shortwave Schedule (shortwaveschedule.com)</strong> — 查询国际广播的排期与频率。</li>
+        <li><strong>WebSDR (websdr.org)</strong> — 全球数百个在线 SDR，免费使用。</li>
+        <li><strong>Reddit /r/shortwave</strong> — 短波爱好者社区。</li>
+        <li><strong>《业余无线电手册》（ARRL Handbook）</strong> — 最经典的无线电参考书。</li>
+      </ul>
+
+      <p>短波无线电的魅力在于，你用最朴素的物理手段——一根导线、一片电离层——与远方建立起联系，在今天这个全面互联的世界里，保留了通信最初的那份质朴与浪漫。</p>
+
+    </div>
+
+    <a class="back-link" href="/">← 返回首页</a>
+  </article>
+</main>
+
+<footer class="container">
+  &copy; 2026 WafiLog
+</footer>
+
+</body>
+</html>
