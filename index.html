@@ -1,79 +1,314 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WaFiGPT</title>
-    <link rel="stylesheet" href="styles.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WafiLog</title>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #fff;
+    color: #111;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.6;
+  }
+
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  /* Header */
+  header {
+    padding: 48px 0 0;
+    text-align: center;
+  }
+  .site-title {
+    display: inline-block;
+    background: #111;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    padding: 10px 28px;
+    text-decoration: none;
+    transition: opacity .2s;
+  }
+  .site-title:hover { opacity: .8; }
+  nav {
+    margin-top: 24px;
+    display: flex;
+    justify-content: center;
+    gap: 2px;
+    font-size: 14px;
+  }
+  nav a {
+    color: #888;
+    text-decoration: none;
+    padding: 6px 16px;
+    transition: color .2s;
+  }
+  nav a:hover { color: #111; }
+  nav a.active { color: #111; font-weight: 600; }
+
+  /* Main */
+  main {
+    padding: 56px 0 80px;
+  }
+
+  /* Article Card */
+  .post { padding: 40px 0; }
+  .post + .post { border-top: 1px solid #eee; }
+  .post:first-child { padding-top: 0; }
+
+  .post-title {
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.4;
+  }
+  .post-title a {
+    color: #111;
+    text-decoration: none;
+  }
+  .post-title a:hover { opacity: .6; }
+
+  .post-meta {
+    font-size: 13px;
+    color: #bbb;
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 12px;
+  }
+
+  .post-excerpt {
+    margin-top: 12px;
+    font-size: 15px;
+    color: #555;
+    line-height: 1.7;
+  }
+
+  .post-btn {
+    display: inline-block;
+    margin-top: 18px;
+    background: #111;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: .5px;
+    padding: 9px 24px;
+    text-decoration: none;
+    transition: opacity .2s;
+  }
+  .post-btn:hover { opacity: .8; }
+
+  /* Sidebar icon */
+  .sidebar-toggle {
+    position: fixed;
+    bottom: 32px;
+    right: 32px;
+    width: 42px;
+    height: 42px;
+    background: #111;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity .2s;
+    z-index: 100;
+  }
+  .sidebar-toggle:hover { opacity: .8; }
+  .sidebar-toggle svg { width: 20px; height: 20px; }
+
+  /* Sidebar overlay */
+  .sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.3);
+    z-index: 200;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .3s;
+  }
+  .sidebar-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    right: -300px;
+    width: 280px;
+    height: 100vh;
+    background: #fff;
+    border-left: 1px solid #eee;
+    z-index: 300;
+    transition: right .3s ease;
+    padding: 40px 28px;
+    overflow-y: auto;
+  }
+  .sidebar.open { right: 0; }
+
+  .sidebar h3 {
+    font-size: 14px;
+    font-weight: 700;
+    color: #111;
+    letter-spacing: 1px;
+    margin-bottom: 20px;
+  }
+  .sidebar ul { list-style: none; }
+  .sidebar li + li { border-top: 1px solid #f0f0f0; }
+  .sidebar a {
+    display: block;
+    padding: 12px 0;
+    color: #555;
+    text-decoration: none;
+    font-size: 14px;
+    transition: color .2s;
+  }
+  .sidebar a:hover { color: #111; }
+
+  .sidebar-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: #888;
+    cursor: pointer;
+    padding: 4px;
+    line-height: 1;
+  }
+  .sidebar-close:hover { color: #111; }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    padding: 32px 0 80px;
+    font-size: 12px;
+    color: #ccc;
+    border-top: 1px solid #f5f5f5;
+  }
+
+  /* Mobile */
+  @media (max-width: 520px) {
+    header { padding-top: 32px; }
+    .container { padding: 0 16px; }
+    .post-title { font-size: 19px; }
+    .post { padding: 32px 0; }
+    .sidebar-toggle { bottom: 20px; right: 20px; }
+    .sidebar { width: 260px; right: -260px; }
+  }
+</style>
 </head>
 <body>
-    <header class="header">
-        <nav class="nav-container">
-            <div class="logo">WaFiGPT</div>
-            <ul class="nav-menu">
-                <li><a href="#home">首页</a></li>
-                <li><a href="#about">项目介绍</a></li>
-                <li><a href="#features">功能说明</a></li>
-                <li><a href="#contact">联系我们</a></li>
-            </ul>
-        </nav>
-    </header>
 
-    <main>
-        <section id="home" class="hero-section">
-            <div class="hero-content">
-                <h1>WaFiGPT</h1>
-                <p class="hero-subtitle">开放高效的AI项目</p>
-                <a href="#about" class="cta-button">了解更多</a>
-            </div>
-        </section>
+<header>
+  <a href="/" class="site-title">WAFILOG</a>
+  <nav>
+    <a href="/" class="active">首页</a>
+    <a href="/archives/">归档</a>
+  </nav>
+</header>
 
-        <section id="about" class="about-section">
-            <div class="container">
-                <h2>项目介绍</h2>
-                <div class="about-content">
-                    <p>WaFiGPT 是一个开源的人工智能项目，致力于提供高效、易用的 AI 解决方案。我们的目标是让先进技术更加普及，帮助开发者和企业快速集成 AI 能力。</p>
-                    <p>项目采用现代化的技术栈，注重代码质量和性能优化，确保在各种场景下都能稳定运行。</p>
-                </div>
-            </div>
-        </section>
+<main class="container">
 
-        <section id="features" class="features-section">
-            <div class="container">
-                <h2>功能说明</h2>
-                <div class="features-grid">
-                    <div class="feature-card">
-                        <h3>训练模型</h3>
-                        <p>使用你自己的数据训练模型，自定义模型行为和性能</p>
-                    </div>
-                    <div class="feature-card">
-                        <h3>持续优化</h3>
-                        <p>基于Issues反馈持续改进</p>
-                    </div>
-                </div>
-            </div>
-        </section>
+  <!-- Article 1 -->
+  <article class="post">
+    <h2 class="post-title">
+      <a href="https://xxx.github.io/2026/07/15/understanding-rust-ownership/#more">深入理解 Rust 所有权系统：从基础到实战</a>
+    </h2>
+    <div class="post-meta">
+      <span>2026-07-15</span>
+      <span>·</span>
+      <span>Rust</span>
+      <span>·</span>
+      <span>预计阅读 6 分钟</span>
+    </div>
+    <p class="post-excerpt">
+      所有权是 Rust 最核心也最具颠覆性的概念。本文从栈与堆的内存模型出发，逐步拆解所有权三原则、借用与引用的生命周期标注，并通过实际代码示例对比常见陷阱。无论你是刚接触 Rust 的新手，还是希望巩固基础的中级开发者，这篇文章都能帮你建立起清晰的所有权心智模型。
+    </p>
+    <a class="post-btn" href="https://xxx.github.io/2026/07/15/understanding-rust-ownership/#more">阅读全文</a>
+  </article>
 
-        <section id="contact" class="contact-section">
-            <div class="container">
-                <h2>联系我们</h2>
-                <div class="contact-content">
-                    <p>欢迎加入 WaFiGPT 开源社区</p>
-                    <div class="contact-links">
-                        <a href="https://github.com/Miwafi" class="contact-link">GitHub</a>
-                        <a href="mailto:1942392307@qq.com" class="contact-link">邮箱</a>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </main>
+  <!-- Article 2 -->
+  <article class="post">
+    <h2 class="post-title">
+      <a href="https://xxx.github.io/2026/07/10/linux-kernel-bpf-intro/#more">Linux BPF 技术入门：从动态追踪到可观测性</a>
+    </h2>
+    <div class="post-meta">
+      <span>2026-07-10</span>
+      <span>·</span>
+      <span>Linux</span>
+      <span>·</span>
+      <span>预计阅读 8 分钟</span>
+    </div>
+    <p class="post-excerpt">
+      BPF（Berkeley Packet Filter）已成为 Linux 内核最强大的观测与安全基础设施。本文将带你从零搭建 BPF 开发环境，解释 BPF 指令集与验证器的工作原理，并通过几个实用的 trace 和 perf 示例，展示如何在不修改内核源码的前提下，实现对系统调用的动态追踪与性能分析。
+    </p>
+    <a class="post-btn" href="https://xxx.github.io/2026/07/10/linux-kernel-bpf-intro/#more">阅读全文</a>
+  </article>
 
-    <footer class="footer">
-        <div class="container">
-            <p>2026 WaFiGPT</p>
-        </div>
-    </footer>
+</main>
 
-    <script src="script.js"></script>
+<footer class="container">
+  &copy; 2026 WafiLog
+</footer>
+
+<!-- Sidebar Toggle -->
+<button class="sidebar-toggle" id="sidebarToggle" aria-label="打开侧边栏">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+    <line x1="4" y1="6" x2="20" y2="6"/>
+    <line x1="4" y1="12" x2="20" y2="12"/>
+    <line x1="4" y1="18" x2="20" y2="18"/>
+  </svg>
+</button>
+
+<!-- Overlay -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- Sidebar -->
+<aside class="sidebar" id="sidebar">
+  <button class="sidebar-close" id="sidebarClose" aria-label="关闭侧边栏">✕</button>
+  <h3>归档</h3>
+  <ul>
+    <li><a href="#">2026 年 7 月</a></li>
+    <li><a href="#">2026 年 6 月</a></li>
+    <li><a href="#">2026 年 5 月</a></li>
+    <li><a href="#">2026 年 4 月</a></li>
+    <li><a href="#">2026 年 3 月</a></li>
+  </ul>
+</aside>
+
+<script>
+  (function() {
+    var toggle = document.getElementById('sidebarToggle');
+    var sidebar = document.getElementById('sidebar');
+    var overlay = document.getElementById('sidebarOverlay');
+    var close = document.getElementById('sidebarClose');
+
+    function open() {
+      sidebar.classList.add('open');
+      overlay.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeSidebar() {
+      sidebar.classList.remove('open');
+      overlay.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    toggle.addEventListener('click', open);
+    close.addEventListener('click', closeSidebar);
+    overlay.addEventListener('click', closeSidebar);
+  })();
+</script>
+
 </body>
 </html>
