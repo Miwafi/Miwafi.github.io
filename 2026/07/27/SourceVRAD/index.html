@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>起源引擎静态光照的技术实现 — WafiLog</title>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
 <style>
   *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -188,9 +189,9 @@
 
       <p>辐射度算法求解的是<strong>漫反射全局光照</strong>问题。在漫反射条件下，BRDF退化为常数，这使得渲染方程可以简化：</p>
 
-      <pre>L_o = L_e + σ_s ∫_A L_i F(x,x') dA(x')</pre>
+      <p>$$L_o = L_e + \sigma_s \int_A L_i F(x,x') dA(x')$$</p>
 
-      <p>其中σ_s是漫反射Albedo（在VTF材质中对应"$reflectivity"参数），F是几何项，包含可见性、距离衰减和角度关系。这是一个第二类Fredholm积分方程，无法求得解析解，只能通过数值方法求解。</p>
+      <p>其中σ<sub>s</sub>是漫反射Albedo（在VTF材质中对应"$reflectivity"参数），F是几何项，包含可见性、距离衰减和角度关系。这是一个第二类Fredholm积分方程，无法求得解析解，只能通过数值方法求解。</p>
 
       <h2>有限元离散化</h2>
 
@@ -204,7 +205,7 @@
 
       <p>离散化后，连续积分转化为线性方程组：</p>
 
-      <pre>(I - σF)L = L_e</pre>
+      <p>$$(I - \sigma F)L = L_e$$</p>
 
       <p>其中F是form factor矩阵，L是待求解的辐射度向量。VRAD最多分配16个线程（threadnum）通过GatherLight()函数并行求解这个方程组。</p>
 
@@ -230,7 +231,7 @@
 
       <p>起源引擎采用<strong>Radiosity Normal Mapping</strong>技术（也称为HL2 Basis），将光照投影到三个正交基底上。在runtime阶段，采样法线贴图的normal向量，分别与三个基向量做点积，加权求和得到该点的静态光照：</p>
 
-      <pre>L_final = (n·b0) * L0 + (n·b1) * L1 + (n·b2) * L2</pre>
+      <p>$$L_{final} = (n \cdot b_0) L_0 + (n \cdot b_1) L_1 + (n \cdot b_2) L_2$$</p>
 
       <p>这种方法基于半球空间（区别于球谐函数的球空间），能够保留光照的方向性信息，使法线贴图的凹凸细节与静态光照自然结合，呈现自阴影等精细效果。</p>
 
