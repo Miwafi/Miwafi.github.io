@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>追寻起源引擎的光与影 — WafiLog</title>
+<title>起源引擎静态光照的技术实现 — WafiLog</title>
 <style>
   *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -120,6 +120,15 @@
     padding: 2px 6px;
     color: #111;
   }
+  .article-content pre {
+    background: #f5f5f5;
+    padding: 16px;
+    overflow-x: auto;
+    margin: 16px 0;
+    font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+    font-size: 13px;
+    line-height: 1.5;
+  }
   .back-link {
     display: inline-block;
     margin-top: 48px;
@@ -173,91 +182,86 @@
 
     <div class="article-content">
 
-      <p>2004年，Valve发布了《半条命2》（Half-Life 2）。这款游戏不仅在叙事和物理引擎上树立了新的标杆，其画面表现同样令人惊叹——莱温霍姆的昏暗小巷中，阳光透过破损的屋顶洒下尘埃；17号城市的高架桥下，阴影层次分明、色彩渗透真实。这些静态场景中的光照，并非实时计算得出，而是由一个名为 <strong>VRAD</strong> 的命令行工具在编译阶段预先"烘焙"进去的。</p>
+      <p>起源引擎（Source Engine）于2000年在SIGGRAPH大会上首次展示，作为GoldSource引擎的继任者，其静态光照系统采用基于辐射度（Radiosity）的预计算方法。本文将从技术层面分析VRAD工具的实现原理和光照贴图的编码方式。</p>
 
-      <p>VRAD 是起源引擎（Source Engine）地图编译三阶段中的最后一步，也是耗时最长、计算最复杂的一步。它的全称是 <strong>Valve Radiosity</strong>，其前身可以追溯到金源引擎（GoldSrc）中的 QRAD（Quake Radiosity）光照编译器。如果说 VBSP 构建了世界的骨架，VVIS 确定了哪些部分需要被看见，那么 VRAD 就是为这个世界注入灵魂的光影画师。</p>
+      <h2>辐射度光传输方程</h2>
 
-      <h2>三阶段编译流水线</h2>
+      <p>辐射度算法求解的是<strong>漫反射全局光照</strong>问题。在漫反射条件下，BRDF退化为常数，这使得渲染方程可以简化：</p>
 
-      <p>在理解 VRAD 之前，有必要先了解它在地图编译流程中的位置。起源引擎的地图编译是一个线性流水线，依次由三个工具完成：</p>
+      <pre>L_o = L_e + σ_s ∫_A L_i F(x,x') dA(x')</pre>
 
-      <p><strong>第一步：VBSP</strong>（Valve BSP）。它读取 Hammer 编辑器生成的 <code>.vmf</code> 文件，执行构造实体几何（CSG）运算，将 brush 几何体转换为非重叠的网格，并生成 BSP 树和 portal（门户）文件。</p>
+      <p>其中σ_s是漫反射Albedo（在VTF材质中对应"$reflectivity"参数），F是几何项，包含可见性、距离衰减和角度关系。这是一个第二类Fredholm积分方程，无法求得解析解，只能通过数值方法求解。</p>
 
-      <p><strong>第二步：VVIS</strong>（Valve VISibility）。它利用 VBSP 生成的 portal 数据计算潜在可见集（PVS），确定地图中哪些区域之间可能存在视线。这套数据让引擎在运行时可以跳过不可见区域的渲染，大幅提升性能。</p>
+      <h2>有限元离散化</h2>
 
-      <p><strong>第三步：VRAD</strong>（Valve RADiosity）。它接受前两步生成的 BSP 文件，将静态光照数据嵌入其中。VRAD 生成的内容包括：光照贴图（lightmaps）、环境光采样（ambient samples）、静态模型（prop_static）的逐顶点光照，以及细节模型（detail prop）的光照。</p>
-
-      <h2>辐射度算法：光的多重反弹</h2>
-
-      <p>VRAD 的核心是一个被称为 <strong>辐射度（Radiosity）</strong> 的全局光照算法。与仅计算直接光照的局部光照模型不同，辐射度算法模拟了光线在场景表面之间的多次反弹。</p>
-
-      <p>具体来说，VRAD 采用了一种"基于面片"（patch-based）的辐射度方法：</p>
+      <p>VRAD采用有限元法（Finite Element Method）将连续的光照方程离散化。具体步骤如下：</p>
 
       <ol>
-        <li><strong>细分面片</strong>：地图中的每个表面被划分为若干小面片。</li>
-        <li><strong>直接光照</strong>：VRAD 从每个光源实体向所有面片发射射线，计算直接照明。</li>
-        <li><strong>间接光照（光能传递）</strong>：每个接收到光照的面片会依据自身的材质颜色和接收到的光能，像光源一样向四周发射光线。这个过程会重复多次——即"多次反弹"（multiple bounces）——直到光能在场景中充分扩散。</li>
+        <li><strong>面片细分</strong>：将地图中的每个brush表面划分为多个patch面片，通过CreateChildPatch()和SubdividePatch()函数实现。</li>
+        <li><strong>可见性计算</strong>：创建transfer list，通过Ray Casting算法判断哪些面片之间存在光传输路径。可以利用VVIS阶段生成的PVS数据进行粗粒度剔除。</li>
+        <li><strong>空间索引</strong>：使用空间哈希表索引各个面片，这种技术在RTXGI 2.0等现代方案中也被采用。</li>
       </ol>
 
-      <p>正是这种多次反弹的模拟，让起源引擎的场景具备了真实感的<strong>颜色渗透</strong>（color bleeding）——比如红色砖墙会把微弱的红色投射到相邻的灰色地面上——以及柔和的软阴影。VRAD 将最终累积的光照值存储为光照贴图纹理，打包进 BSP 文件中。</p>
+      <p>离散化后，连续积分转化为线性方程组：</p>
 
-      <h2>从辐射度到光子映射：VRAD3 的进化</h2>
+      <pre>(I - σF)L = L_e</pre>
 
-      <p>起源引擎的 VRAD 使用的是经典的辐射度算法，而到了起源 2（Source 2）引擎，光照烘焙工具升级为 <strong>VRAD3</strong>，其核心算法从辐射度转变为<strong>光子映射（Photon Mapping）</strong> ——一种增强版的光线追踪算法。</p>
+      <p>其中F是form factor矩阵，L是待求解的辐射度向量。VRAD最多分配16个线程（threadnum）通过GatherLight()函数并行求解这个方程组。</p>
 
-      <p>光子映射的工作原理分为两步：首先，从光源发射大量光子包，通过光线追踪记录光子击中表面的位置，生成光子图；然后，在渲染阶段根据光子图计算每个点的光照。相比辐射度算法，光子映射能够捕捉到<strong>更高频的光照细节</strong>，烘焙出的光照更加精细。</p>
+      <h2>Form Factor计算</h2>
 
-      <p>当然，这种精度的提升是有代价的：光线追踪的计算量可能比辐射度慢上 90%。VRAD3 需要大量执行光线-场景求交运算以及 k-D 树遍历，且目前主要依赖 CPU 计算。不过，Facepunch 等团队已将 GPU 硬件加速提上日程，有望将编译速度提升成百上千倍。</p>
+      <p>Form Factor是辐射度算法的核心，表示两个面片之间的几何关系。VRAD实现了两种计算方式：</p>
 
-      <h2>LDR 与 HDR：两套光照贴图</h2>
+      <p><strong>面片到微分面片</strong>（FormFactorPolyToDiff）：基于Philip Dutre的Global Illumination Compendium公式81，适用于近距离的精确计算。</p>
 
-      <p>起源引擎支持在同一个编译好的地图中存放两套独立的光照贴图：一套用于 <strong>LDR</strong>（低动态范围），另一套用于 <strong>HDR</strong>（高动态范围）。</p>
+      <p><strong>微分面片到微分面片</strong>（FormFactorDiffToDiff）：基于Pat Hanrahan的课程讲义，当距离大于5倍patch尺寸时可以使用近似公式。</p>
 
-      <p>在 LDR 模式下，制作者往往需要在黑暗区域额外放置点光源或纹理光源来保证可见度。而 HDR 光照贴图通过自动曝光计算，可以更自然地呈现从明亮到黑暗的过渡，减少了对"假光源"的依赖。</p>
+      <h2>光照贴图处理</h2>
 
-      <p>VRAD 提供了三个命令行参数来控制编译哪种光照：<code>-ldr</code>（仅 LDR）、<code>-hdr</code>（仅 HDR）、<code>-both</code>（两者都编译）。需要注意的是，在早期的引擎分支中，如果只编译了 HDR 而玩家关闭了 HDR 选项，地图会强制进入 <code>mat_fullbright 1</code> 模式。因此，面向分发的最终版本地图通常建议使用 <code>-both</code> 参数编译。</p>
+      <p>求解完成后，光照贴图仍然是粗糙的方块状。VRAD采用<strong>自适应超采样</strong>进行平滑处理：</p>
 
-      <p>在 Hammer 编辑器中编译 HDR 也很简单：在"运行地图"对话框的 RAD 部分勾选 HDR 复选框即可。你会注意到编译日志中 VRAD 运行了两次——这是正常的，因为它需要分别为 LDR 和 HDR 构建光照数据。</p>
+      <p>通过ComputeLightmapGradients()计算每个采样点的梯度。如果梯度小于0.0625，说明该点与邻近点变化平缓，不需要超采样；否则执行SupersampleLightAtPoint()进行4x超采样。</p>
 
-      <h2>关键参数与工作流</h2>
+      <p>在半条命2的二十周年更新中，Valve首次将线性插值改为双三次插值（Bicubic），使光照过渡更加柔和。这是自2000年以来首次对该算法的调整。</p>
 
-      <p>VRAD 提供了丰富的命令行参数，让制作者可以在编译速度与光照质量之间做出权衡：</p>
+      <h2>Radiosity Normal Mapping编码</h2>
+
+      <p>传统的光照贴图只存储每个像素的总辐射度，丢失了方向信息。当表面带有法线贴图时，凹凸细节无法得到正确的光照响应。</p>
+
+      <p>起源引擎采用<strong>Radiosity Normal Mapping</strong>技术（也称为HL2 Basis），将光照投影到三个正交基底上。在runtime阶段，采样法线贴图的normal向量，分别与三个基向量做点积，加权求和得到该点的静态光照：</p>
+
+      <pre>L_final = (n·b0) * L0 + (n·b1) * L1 + (n·b2) * L2</pre>
+
+      <p>这种方法基于半球空间（区别于球谐函数的球空间），能够保留光照的方向性信息，使法线贴图的凹凸细节与静态光照自然结合，呈现自阴影等精细效果。</p>
+
+      <h2>性能特征</h2>
+
+      <p>VRAD的编译时间与以下因素相关：</p>
 
       <ul>
-        <li><strong><code>-fast</code></strong>：快速低质量编译，用于快速预览。但官方文档警告：<code>-fast</code> 会在暗区和位移表面边缘产生随机的变色斑点，不建议用于最终发布版本。</li>
-        <li><strong><code>-final</code></strong>：提升天空光和间接光照的质量，通过发射更多光线换取更精确的结果。这是最终发布地图时的推荐选项，但编译时间会显著增加。</li>
-        <li><strong><code>-StaticPropLighting</code></strong>：让静态模型（prop_static）也能获得正确的光照。默认的快速编译设置中这个参数并未开启，需要手动在专家编译模式中添加。</li>
-        <li><strong><code>-bounce</code></strong>：控制光线反弹的次数。增加反弹次数可以让间接光照更加充分，但也会线性增加编译时间。</li>
-        <li><strong><code>-bounceFromNamed</code></strong>：强制带有名称（targetname）的光源也参与间接光照计算。默认情况下，被命名的光源（意味着它们可能在游戏运行时被开关）只计算直接光照以节省空间。</li>
+        <li><strong>面片数量</strong>：patch数量决定线性方程组的维度。</li>
+        <li><strong>反弹次数</strong>：多次反弹需要迭代求解。</li>
+        <li><strong>光照贴图精度</strong>：lightmap scale参数直接影响采样密度。</li>
       </ul>
 
-      <p>此外，VRAD 还可以通过 <code>.rad</code> 文件来控制特定材质的光照行为——比如让某个 brush 表面自身发光。</p>
+      <p>如果地图存在leak（泄漏），VRAD会为无限大的外部空间计算光照，编译时间急剧膨胀。多线程性能在带有-final参数的室外场景中存在瓶颈，Valve在SDK 2013中提供了修复补丁。</p>
 
-      <h2>为什么 VRAD 这么慢</h2>
+      <p>社区存在GPU VRAD项目尝试加速编译过程，但存在较多问题。起源2引擎的VRAD3转向Path Tracing框架，并提供Vulkan硬件光追扩展，大幅缩短了复杂场景的编译时间。</p>
 
-      <p>任何有过起源引擎地图制作经验的人都知道，VRAD 是三个编译阶段中最慢的一个。一个复杂的地图，VRAD 跑上几个小时并不罕见。</p>
+      <h2>技术限制</h2>
 
-      <p>这种缓慢是有充分理由的：VRAD 需要为地图中的每一个表面、每一个像素计算来自所有光源的直接光照和多次反弹的间接光照。如果地图存在泄漏（leak），VRAD 会试图为无限大的外部空间计算光照，编译时间会急剧膨胀。</p>
+      <p>辐射度算法假设所有表面都是理想漫反射体，无法处理镜面反射和折射。对于高频光照细节（如尖锐的阴影边缘），需要增加patch密度或转向其他方法（如光子映射）。</p>
 
-      <p>光照贴图的精度（lightmap scale）也直接影响编译时间——精度越高，需要计算的像素越多，VRAD 的工作量就越大。制作者需要在画面质量与编译时间之间找到平衡点。</p>
+      <p>光照贴图在运行时是静态的，无法响应动态光源变化。移动的光源（如手电筒）需要额外的动态光照系统支持。</p>
 
-      <p>值得一提的是，VRAD 存在一个长期的多线程性能问题：在带有 <code>-final</code> 参数的室外场景中，即使 CPU 使用率显示为 100%，实际性能也无法随核心数线性扩展。Valve 在 SDK 2013 中已经提供了修复补丁。</p>
+      <h2>参考文献</h2>
 
-      <h2>静态光照的艺术</h2>
-
-      <p>VRAD 烘焙出的光照贴图并非简单的颜色记录。起源引擎采用了一种名为 <strong>辐射度法线贴图（Radiosity Normal Mapping）</strong> 的技术。传统的光照贴图只存储了每个像素的总辐射度，丢失了光照的方向信息——这意味着当表面带有法线贴图时，凹凸细节无法得到正确的光照响应。</p>
-
-      <p>Valve 的解决方案是在光照贴图中存储三个正交方向上的辐照度信息。在实时渲染时，引擎根据表面法线与这三个方向的关系重建出方向性的光照，让法线贴图的凹凸细节能够与静态光照自然结合，呈现出包括自阴影在内的精细表面细节。</p>
-
-      <p>这正是《半条命2》中那些砖墙、混凝土表面看起来如此真实的原因之一——VRAD 不仅算出了"亮不亮"，还算出了"光从哪个方向来"。</p>
-
-      <h2>结语</h2>
-
-      <p>VRAD 是一个低调而强大的工具。在游戏运行时，玩家看到的是流畅的画面和真实的光影；而在编译阶段，VRAD 正在默默地进行着数以亿计的计算，将这些光影一针一线地"缝"进光照贴图中。</p>
-
-      <p>从金源引擎的 QRAD，到起源引擎的 VRAD，再到起源 2 的 VRAD3，这套光照烘焙工具链见证了 Valve 在图形技术上的持续演进。无论是辐射度算法还是光子映射，其本质都是在<strong>用离线计算的时间换取实时渲染的性能</strong>——让2004年的主流电脑能够流畅运行《半条命2》这样画面级别的游戏。</p>
-
-      <p>在实时光线追踪逐渐普及的今天，静态光照烘焙似乎显得有些"过时"。但正是这种"过时"的技术，在过去的二十年里支撑起了无数经典游戏的视觉体验。每一次按下编译按钮，等待 VRAD 缓慢爬过进度条的时刻，都是一次对光与影的耐心追寻。</p>
+      <ol>
+        <li>Chris Green. "Efficient Self-Shadowed Radiosity Normal Mapping." SIGGRAPH 2007.</li>
+        <li>Jason Mitchell, Gary McTaggart, Chris Green. "Shading in Valve's Source Engine." SIGGRAPH 2006.</li>
+        <li>Groal et al. "Modeling the interaction of light between diffuse surfaces." 1984.</li>
+        <li>Kajiya. "The rendering equation." 1986.</li>
+      </ol>
 
     </div>
 
@@ -266,7 +270,7 @@
 </main>
 
 <footer class="container">
-  WafiLog
+  &copy; 2026 WafiLog
 </footer>
 
 </body>
