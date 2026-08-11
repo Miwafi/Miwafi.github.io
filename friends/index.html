@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>归档 — WafiLog</title>
+<title>友链 — WafiLog</title>
 <style>
   *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -59,103 +59,115 @@
     padding: 56px 0 80px;
   }
 
-  /* Page title */
   .page-title {
     font-size: 13px;
     font-weight: 700;
     color: #bbb;
     letter-spacing: 1px;
     text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .page-subtitle {
+    font-size: 14px;
+    color: #ccc;
     margin-bottom: 40px;
   }
 
-  /* Year */
-  .archive-year {
-    margin-bottom: 48px;
+  /* Friend card grid */
+  .friend-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
   }
-  .archive-year:last-child {
-    margin-bottom: 0;
+
+  .friend-card {
+    display: flex;
+    flex-direction: column;
+    padding: 24px;
+    border: 1px solid #eee;
+    transition: border-color .2s, box-shadow .2s;
   }
-  .year-heading {
-    font-size: 28px;
+  .friend-card:hover {
+    border-color: #ddd;
+    box-shadow: 0 2px 12px rgba(0,0,0,.04);
+  }
+
+  .friend-card-top {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+
+  .friend-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    background: #f5f5f5;
+  }
+
+  .friend-name {
+    font-size: 16px;
     font-weight: 700;
     color: #111;
-    margin-bottom: 24px;
-    letter-spacing: .5px;
+    line-height: 1.3;
   }
 
-  /* Month */
-  .archive-month {
-    margin-bottom: 32px;
-  }
-  .archive-month:last-child {
-    margin-bottom: 0;
-  }
-  .month-heading {
-    font-size: 16px;
-    font-weight: 600;
-    color: #555;
-    margin-bottom: 16px;
-    padding-left: 4px;
-  }
-
-  /* Entry */
-  .archive-entry {
-    display: flex;
-    align-items: baseline;
-    gap: 16px;
-    padding: 12px 0;
-    border-bottom: 1px solid #f0f0f0;
-    transition: border-color .2s;
-  }
-  .archive-entry:hover {
-    border-bottom-color: #ddd;
-  }
-  .archive-entry:last-child {
-    border-bottom: none;
-  }
-
-  .archive-entry-date {
-    flex-shrink: 0;
+  .friend-description {
     font-size: 13px;
-    color: #bbb;
-    font-variant-numeric: tabular-nums;
-    min-width: 48px;
+    color: #888;
+    line-height: 1.5;
+    margin-bottom: 16px;
+    flex: 1;
   }
 
-  .archive-entry-title {
-    flex: 1;
-    font-size: 15px;
-    font-weight: 500;
-    line-height: 1.4;
-  }
-  .archive-entry-title a {
-    color: #111;
+  .friend-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: #bbb;
     text-decoration: none;
     transition: color .2s;
+    align-self: flex-start;
   }
-  .archive-entry-title a:hover {
-    color: #888;
+  .friend-link:hover {
+    color: #111;
   }
-
-  .archive-entry-category {
-    flex-shrink: 0;
-    font-size: 11px;
-    color: #bbb;
-    background: #f8f8f8;
-    padding: 2px 10px;
-    border-radius: 2px;
-    letter-spacing: .3px;
+  .friend-link svg {
+    width: 12px;
+    height: 12px;
   }
 
-  /* Stats */
-  .archive-stats {
-    margin-top: 48px;
-    padding-top: 24px;
-    border-top: 1px solid #eee;
+  /* Apply section */
+  .apply-section {
+    margin-top: 56px;
+    padding: 32px;
+    background: #fafafa;
     text-align: center;
+  }
+  .apply-section h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: #111;
+    margin-bottom: 10px;
+  }
+  .apply-section p {
     font-size: 13px;
-    color: #bbb;
+    color: #888;
+    line-height: 1.7;
+  }
+  .apply-section code {
+    display: inline-block;
+    font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+    font-size: 12px;
+    background: #eee;
+    padding: 2px 8px;
+    margin-top: 6px;
+    color: #333;
   }
 
   /* Footer */
@@ -167,7 +179,7 @@
     border-top: 1px solid #f5f5f5;
   }
 
-  /* Sidebar (same as homepage) */
+  /* Sidebar */
   .sidebar-toggle {
     position: fixed;
     bottom: 32px;
@@ -254,10 +266,7 @@
   @media (max-width: 520px) {
     header { padding-top: 32px; }
     .container { padding: 0 16px; }
-    .archive-entry { gap: 12px; }
-    .archive-entry-date { min-width: 40px; }
-    .archive-entry-title { font-size: 14px; }
-    .archive-entry-category { display: none; }
+    .friend-grid { grid-template-columns: 1fr; }
     .sidebar-toggle { bottom: 20px; right: 20px; }
     .sidebar { width: 260px; right: -260px; }
   }
@@ -269,44 +278,30 @@
   <a href="/" class="site-title">WAFILOG</a>
   <nav>
     <a href="/">首页</a>
-    <a href="/archives/" class="active">归档</a>
-    <a href="/friends/">友链</a>
+    <a href="/archives/">归档</a>
+    <a href="/friends/" class="active">友链</a>
   </nav>
 </header>
 
 <main class="container">
-  <div class="page-title">归档</div>
+  <div class="page-title">友链</div>
+  <div class="page-subtitle">朋友们</div>
 
-  <div class="archive-year">
-    <h2 class="year-heading">2026</h2>
-
-    <div class="archive-month" id="2026-08">
-      <h3 class="month-heading">8月</h3>
-
-      <div class="archive-entry">
-        <span class="archive-entry-date">08-12</span>
-        <span class="archive-entry-title">
-          <a href="https://miwafi.github.io/2026/08/12/Driverdevelop/#more">Windows内核驱动食用教程</a>
-        </span>
-        <span class="archive-entry-category">教程</span>
-      </div>
-    </div>
-
-    <div class="archive-month" id="2026-07">
-      <h3 class="month-heading">7月</h3>
-
-      <div class="archive-entry">
-        <span class="archive-entry-date">07-27</span>
-        <span class="archive-entry-title">
-          <a href="https://miwafi.github.io/2026/07/27/SourceVRAD/#more">追寻起源引擎的光与影</a>
-        </span>
-        <span class="archive-entry-category">技术调查</span>
-      </div>
-    </div>
+  <div class="friend-grid" id="friendGrid">
+    <!-- friend cards rendered by JS -->
   </div>
 
-  <div class="archive-stats">
-    共 2 篇文章
+  <div class="apply-section">
+    <h3>交换友链</h3>
+    <p>
+      如需交换友链，请按以下格式发送给1942392307@qq.com<br>
+    </p>
+    <code id="templateCode">{
+  "name": "你的博客名",
+  "description": "一句话描述",
+  "link": "https://example.com",
+  "avatar": "https://example.com/avatar.png"
+}</code>
   </div>
 </main>
 
@@ -335,6 +330,37 @@
     <li><a href="/archives/#2026-07">2026 年 7 月</a></li>
   </ul>
 </aside>
+
+<script>
+  const friends = [
+    {
+  "name": "穗积的宇宙船",
+  "description": "莫笑吾辈好远骛，跬步平川马蹄疾。",
+  "link": "https://blog.huanment.top",
+  "avatar": "https://blog.huanment.top/images/avatar.avif"
+    }
+  ];
+
+  const grid = document.getElementById('friendGrid');
+
+  friends.forEach(function(f) {
+    const card = document.createElement('div');
+    card.className = 'friend-card';
+
+    card.innerHTML =
+      '<div class="friend-card-top">' +
+        '<img class="friend-avatar" src="' + f.avatar + '" alt="' + f.name + '" loading="lazy">' +
+        '<div class="friend-name">' + f.name + '</div>' +
+      '</div>' +
+      '<div class="friend-description">' + f.description + '</div>' +
+      '<a class="friend-link" href="' + f.link + '" target="_blank" rel="noopener">' +
+        f.link.replace(/^https?:\/\//, '') +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17l9.2-9.2M17 17V7H7"/></svg>' +
+      '</a>';
+
+    grid.appendChild(card);
+  });
+</script>
 
 <script>
   (function() {
