@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Windows 内核驱动开发 — WafiLog</title>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #fff;
+    color: #111;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.6;
+  }
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+  header {
+    padding: 48px 0 0;
+    text-align: center;
+  }
+  .site-title {
+    display: inline-block;
+    background: #111;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    padding: 10px 28px;
+    text-decoration: none;
+    transition: opacity .2s;
+  }
+  .site-title:hover { opacity: .8; }
+  nav {
+    margin-top: 24px;
+    display: flex;
+    justify-content: center;
+    gap: 2px;
+    font-size: 14px;
+  }
+  nav a {
+    color: #888;
+    text-decoration: none;
+    padding: 6px 16px;
+    transition: color .2s;
+  }
+  nav a:hover { color: #111; }
+
+  /* Article */
+  article {
+    padding: 48px 0 64px;
+  }
+  .article-header {
+    margin-bottom: 40px;
+  }
+  .article-title {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.35;
+    letter-spacing: .5px;
+  }
+  .article-meta {
+    font-size: 13px;
+    color: #bbb;
+    margin-top: 14px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 12px;
+  }
+  .article-content {
+    font-size: 16px;
+    color: #333;
+    line-height: 1.85;
+  }
+  .article-content h2 {
+    font-size: 21px;
+    font-weight: 700;
+    color: #111;
+    margin: 42px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #eee;
+  }
+  .article-content h3 {
+    font-size: 17px;
+    font-weight: 700;
+    color: #111;
+    margin: 32px 0 12px;
+  }
+  .article-content p {
+    margin-bottom: 16px;
+  }
+  .article-content ul, .article-content ol {
+    margin: 0 0 16px 20px;
+  }
+  .article-content li {
+    margin-bottom: 8px;
+  }
+  .article-content blockquote {
+    margin: 20px 0;
+    padding: 16px 20px;
+    background: #f9f9f9;
+    border-left: 3px solid #ddd;
+    color: #555;
+    font-style: normal;
+  }
+  .article-content blockquote p {
+    margin-bottom: 0;
+  }
+  .article-content strong {
+    color: #111;
+    font-weight: 700;
+  }
+  .article-content code {
+    font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+    font-size: 14px;
+    background: #f5f5f5;
+    padding: 2px 6px;
+    color: #111;
+  }
+  .article-content pre {
+    background: #f5f5f5;
+    padding: 16px;
+    overflow-x: auto;
+    margin: 16px 0;
+    font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .back-link {
+    display: inline-block;
+    margin-top: 48px;
+    font-size: 14px;
+    color: #888;
+    text-decoration: none;
+    transition: color .2s;
+  }
+  .back-link:hover { color: #111; }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    padding: 32px 0 64px;
+    font-size: 12px;
+    color: #ccc;
+    border-top: 1px solid #f5f5f5;
+  }
+
+  @media (max-width: 520px) {
+    header { padding-top: 32px; }
+    .container { padding: 0 16px; }
+    .article-title { font-size: 22px; }
+    .article-content { font-size: 15px; }
+    .article-content h2 { font-size: 18px; }
+    article { padding: 32px 0 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a href="/" class="site-title">WAFILOG</a>
+  <nav>
+    <a href="/">首页</a>
+    <a href="/archives/">归档</a>
+  </nav>
+</header>
+<main class="container">
+  <article>
+    <div class="article-header">
+      <h1 class="article-title">Windows内核驱动食用教程</h1>
+      <div class="article-meta">
+        <span>2026-08-12</span>
+        <span>·</span>
+        <span>技术教程</span>
+        <span>·</span>
+        <span>预计阅读 12 分钟</span>
+      </div>
+    </div>
+
+    <div class="article-content">
+
+      <p>本文基于微软官方 WDK 文档与我的排错经验，覆盖 <strong>VS2022 组件选择、WDK 安装后 ntddk.h 找不到的根因与修复、最小 KMDF 驱动编写、编译部署与双机调试</strong>，所有步骤均可在 Windows 11 + VS2022 环境下复现。</p>
+
+      <blockquote>
+        <p>微软当前推荐用于生产的组合是 <strong>Visual Studio 2022 + WDK 26100.6584</strong>。WDK 从 10.0.26100.1 起以 NuGet 包和 VSIX 扩展形式分发，VS2022 安装时必须在"单个组件"中手动勾选 WDK 与对应的 Spectre-mitigated 库，否则项目模板和头文件都不会就位。</p>
+      </blockquote>
+
+      <h2>一、VS2022 工作负载与单个组件</h2>
+
+      <p>启动 Visual Studio Installer，选择"修改"已安装的 VS2022，按以下清单勾选：</p>
+
+      <ol>
+        <li><strong>工作负载</strong>：勾选「使用 C++ 的桌面开发」。</li>
+        <li><strong>单个组件</strong>（搜索框输入「64 latest」可快速定位）：
+          <ul>
+            <li>MSVC v143 - VS 2022 C++ x64/x86 Spectre-mitigated libs (Latest)</li>
+            <li>MSVC v143 - VS 2022 C++ ARM64/ARM64EC Spectre-mitigated libs (Latest)</li>
+            <li>C++ ATL for latest v143 build tools with Spectre Mitigations (x86 & x64)</li>
+            <li>Windows Driver Kit</li>
+          </ul>
+        </li>
+        <li><strong>Windows 10 SDK</strong>：选择与 WDK 版本匹配的 SDK（WDK 26100 对应 10.0.26100.x）。</li>
+      </ol>
+
+      <p>安装完成后，<code>C:\Program Files (x86)\Windows Kits\10\Include\</code> 下应出现对应版本的目录，且其中含有 <code>km</code> 子目录——<strong>ntddk.h 就位于 <code>km\ntddk.h</code></strong>。</p>
+
+      <h2>二、ntddk.h 找不到的根因与修复</h2>
+
+      <p>即便在 VS Installer 中勾选了 WDK，编译时仍可能报 <code>C1083: Cannot open include file: 'ntddk.h'</code>。这不是 WDK 没装，而是<strong>WDK 的 Visual Studio 集成（VSIX 扩展）没有真正生效</strong>，或者项目所指向的 Windows SDK 版本下不存在 <code>km</code> 文件夹。</p>
+
+      <h3>根因清单</h3>
+
+      <ul>
+        <li><strong>WDK VSIX 未安装</strong>：VS Installer 勾选 WDK 后，底层需要把 <code>WDK.vsix</code> 注册进 VS2022。集成未完全时，项目模板和头文件路径都不会注入。</li>
+        <li><strong>项目 Windows SDK 版本错误</strong>：项目属性的「Windows SDK Version」指向了一个没有 <code>Include\km</code> 的 SDK 版本。</li>
+        <li><strong>平台工具集不匹配</strong>：驱动项目必须使用 <code>WindowsKernelModeDriver</code> 工具集，选成普通 v143 会导致包含路径解析失败。</li>
+      </ul>
+
+      <h3>解决方案：从微软官网下载 WDK 独立安装包</h3>
+
+      <p>这是最彻底、也是微软官方推荐的修复路径——绕过 VS Installer 的组件勾选，直接用 WDK 独立安装包完成注册：</p>
+
+      <ol>
+        <li>访问微软官方 <a href="https://learn.microsoft.com/en-us/windows-hardware/drivers/other-wdk-downloads">Download WDK</a> 页面，下载 <strong>WDK 26100.6584</strong> 安装包（wdksetup.exe）。</li>
+        <li>运行安装包，过程中务必勾选「<strong>Debugging Tools for Windows</strong>」。</li>
+        <li>安装完成后，<strong>手动注册 WDK VSIX 扩展</strong>（关键步骤）：
+          <pre>C:\Program Files (x86)\Windows Kits\10\Vsix\VS2022\10.0.26100.0\amd64\WDK.vsix</pre>
+          双击该文件或通过管理员 CMD 执行：
+          <pre>VSIXInstaller.exe /q /a "C:\Program Files (x86)\Windows Kits\10\Vsix\VS2022\WDK.vsix"</pre>
+        </li>
+        <li>重启 Visual Studio。新建项目时应能看到「Kernel Mode Driver, Empty (KMDF)」模板。</li>
+      </ol>
+
+      <h3>项目级兜底配置</h3>
+
+      <p>如果模板已出现但仍报找不到 ntddk.h，按以下顺序检查项目属性：</p>
+
+      <ol>
+        <li><strong>常规 → Windows SDK 版本</strong>：选择 <code>C:\Program Files (x86)\Windows Kits\10\Include\</code> 下<strong>真实存在 km 子目录</strong>的版本。</li>
+        <li><strong>C/C++ → 附加包含目录</strong>：手动加入
+          <pre>C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\km
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\km\wdf
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\shared</pre>
+          将 <code>10.0.26100.0</code> 替换为你本机实际版本号。</li>
+        <li><strong>配置管理器 → 活动解决方案平台</strong>：必须为 <strong>x64</strong>，不要手动定义 AMD64（会导致 "No Target Architecture" 错误）。</li>
+      </ol>
+
+      <blockquote>
+        <p>排错口诀：<strong>先看 <code>Include\km</code> 文件夹存不存在，再看项目 Windows SDK 版本指没指到它，最后才考虑手动加包含路径</strong>。绝大多数「ntddk.h 找不到」都是前三步之一出了问题。</p>
+      </blockquote>
+
+      <h2>三、创建第一个 KMDF 驱动</h2>
+
+      <p>WDK 安装就绪后，新建项目 → 搜索「Driver」→ 选择「<strong>Kernel Mode Driver, Empty (KMDF)</strong>」。项目名称不超过 32 字符（WDF 框架限制）。</p>
+
+      <p>右键项目 → 添加 → 新建项 → 命名为 <code>Driver.c</code>（<strong>必须是 .c，不能是 .cpp</strong>）。填入最小可运行代码：</p>
+
+      <pre>#include &lt;ntddk.h&gt;
+#include &lt;wdf.h&gt;
+
+DRIVER_INITIALIZE DriverEntry;
+EVT_WDF_DRIVER_DEVICE_ADD KmdfHelloWorldEvtDeviceAdd;
+
+NTSTATUS
+DriverEntry(
+    _In_ PDRIVER_OBJECT  DriverObject,
+    _In_ PUNICODE_STRING RegistryPath
+)
+{
+    NTSTATUS status = STATUS_SUCCESS;
+    WDF_DRIVER_CONFIG config;
+
+    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL,
+              "KmdfHelloWorld: DriverEntry\n"));
+
+    WDF_DRIVER_CONFIG_INIT(&config, KmdfHelloWorldEvtDeviceAdd);
+    status = WdfDriverCreate(DriverObject, RegistryPath,
+                             WDF_NO_OBJECT_ATTRIBUTES,
+                             &config, WDF_NO_HANDLE);
+    return status;
+}
+
+NTSTATUS
+KmdfHelloWorldEvtDeviceAdd(
+    _In_    WDFDRIVER        Driver,
+    _Inout_ PWDFDEVICE_INIT  DeviceInit
+)
+{
+    UNREFERENCED_PARAMETER(Driver);
+    NTSTATUS status;
+    WDFDEVICE hDevice;
+
+    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL,
+               "KmdfHelloWorld: EvtDeviceAdd\n"));
+
+    status = WdfDeviceCreate(&DeviceInit,
+                             WDF_NO_OBJECT_ATTRIBUTES, &hDevice);
+    return status;
+}</pre>
+
+      <p>选择 <strong>Debug / x64</strong> 配置，生成解决方案。编译成功后，在 <code>x64\Debug\</code> 下会得到 <code>.sys</code>、<code>.inf</code> 等驱动包文件。</p>
+
+      <h2>四、常见编译错误速查</h2>
+
+      <table style="width:100%; border-collapse:collapse; margin:16px 0; font-size:14px;">
+        <thead>
+          <tr style="border-bottom:2px solid #111; text-align:left;">
+            <th style="padding:8px;">错误</th>
+            <th style="padding:8px;">原因</th>
+            <th style="padding:8px;">修复</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom:1px solid #eee;">
+            <td style="padding:8px;"><code>C1083: ntddk.h</code></td>
+            <td style="padding:8px;">WDK 集成未生效 / SDK 版本无 km</td>
+            <td style="padding:8px;">重装 WDK + 手动注册 WDK.vsix</td>
+          </tr>
+          <tr style="border-bottom:1px solid #eee;">
+            <td style="padding:8px;"><code>LNK2001: 无法解析 ntoskrnl</code></td>
+            <td style="padding:8px;">链接器缺内核库</td>
+            <td style="padding:8px;">链接器 → 忽略特定默认库：<code>ntdll.lib</code></td>
+          </tr>
+          <tr style="border-bottom:1px solid #eee;">
+            <td style="padding:8px;"><code>C2220 /WX</code></td>
+            <td style="padding:8px;">警告被视为错误</td>
+            <td style="padding:8px;">C/C++ → 将警告视为错误：<code>否 (/WX-)</code></td>
+          </tr>
+          <tr style="border-bottom:1px solid #eee;">
+            <td style="padding:8px;"><code>MSB8036</code></td>
+            <td style="padding:8px;">SDK 版本不匹配</td>
+            <td style="padding:8px;">项目属性 → Windows SDK 版本改选已安装版本</td>
+          </tr>
+          <tr>
+            <td style="padding:8px;"><code>No Target Architecture</code></td>
+            <td style="padding:8px;">手动定义了 AMD64 宏</td>
+            <td style="padding:8px;">删除手动宏，仅通过配置管理器选 x64</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>五、测试签名与部署</h2>
+
+      <p>Windows 默认禁止加载未签名驱动。开发阶段使用<strong>测试签名模式</strong>：</p>
+
+      <ol>
+        <li><strong>目标机开启测试签名</strong>（管理员 CMD）：
+          <pre>bcdedit /set testsigning on</pre>
+          重启后桌面右下角会出现「调试模式」水印。</li>
+        <li><strong>生成测试证书</strong>（使用 WDK 自带的 makecert）：
+          <pre>makecert -r -pe -ss PrivateCertStore -n "CN=TestCert" testcert.cer</pre>
+        </li>
+        <li><strong>用 SignTool 签名 .sys</strong>：
+          <pre>signtool sign /v /s PrivateCertStore /n TestCert /fd SHA256 driver.sys</pre>
+        </li>
+        <li><strong>在目标机安装证书</strong>：双击 <code>testcert.cer</code> → 安装到「受信任的根证书颁发机构」。</li>
+      </ol>
+
+      <h2>六、双机调试环境</h2>
+
+      <p>强烈建议使用<strong>虚拟机作为目标机</strong>进行调试，避免本机蓝屏。主流方案有两种：</p>
+
+      <ul>
+        <li><strong>网络调试（推荐）</strong>：宿主机与目标虚拟机通过网络直连，使用 WinDbg 的 <code>net</code> 协议。</li>
+        <li><strong>串口调试</strong>：虚拟机配置 COM 端口，波特率 115200。</li>
+      </ul>
+
+      <p>目标机开启调试：</p>
+      <pre>bcdedit /debug on
+bcdedit /dbgsettings net hostip:192.168.1.10 port:50000</pre>
+
+      <p>宿主机启动 WinDbg Preview，连接到目标机。常用命令：</p>
+
+      <pre>bm KmdfHelloWorld!DriverEntry   # 在 DriverEntry 设断点
+lm                              # 列出已加载模块
+x KmdfHelloWorld!*              # 查看模块内符号
+k                               # 查看调用栈</pre>
+
+      <p>驱动加载后，<code>KdPrintEx</code> 的输出可通过 <strong>DebugView</strong>（勾选「Capture Kernel」）或 WinDbg 的调试窗口查看。</p>
+
+      <blockquote>
+        <p>内核驱动开发中，一个未处理的 IRQL 违规或错误自旋锁就可能导致 <code>0x000000D1</code> 蓝屏。<strong>每次只改一个点、用 WinDbg 单步跟进去</strong>，比一次性堆砌功能更有效率。</p>
+      </blockquote>
+
+      <h2>参考文献</h2>
+
+      <ol>
+        <li>Microsoft. "Download the Windows Driver Kit (WDK)." 2025.</li>
+        <li>Microsoft. "Write a Hello World Windows driver (Kernel-Mode Driver Framework)." 2025.</li>
+        <li>Microsoft. "Debug Universal Drivers - Step by Step Lab (Echo Kernel Mode)." 2025.</li>
+        <li>Microsoft. "Test-Signing a Driver Package." Windows Hardware Dev Center.</li>
+        <li>microsoft/Windows-driver-samples. GitHub Repository.</li>
+      </ol>
+
+    </div>
+
+    <a class="back-link" href="/">← 返回首页</a>
+  </article>
+</main>
+
+<footer class="container">
+  &copy; 2026 WafiLog
+</footer>
+
+</body>
+</html>
