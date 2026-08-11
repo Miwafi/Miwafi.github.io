@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WafiLog</title>
+<title>归档 — WafiLog</title>
 <style>
   *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -59,53 +59,115 @@
     padding: 56px 0 80px;
   }
 
-  /* Article Card */
-  .post { padding: 40px 0; }
-  .post + .post { border-top: 1px solid #eee; }
-  .post:first-child { padding-top: 0; }
-
-  .post-title {
-    font-size: 22px;
+  /* Page title */
+  .page-title {
+    font-size: 13px;
     font-weight: 700;
-    line-height: 1.4;
+    color: #bbb;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 40px;
   }
-  .post-title a {
-    color: #111;
-    text-decoration: none;
-  }
-  .post-title a:hover { opacity: .6; }
 
-  .post-meta {
+  /* Year */
+  .archive-year {
+    margin-bottom: 48px;
+  }
+  .archive-year:last-child {
+    margin-bottom: 0;
+  }
+  .year-heading {
+    font-size: 28px;
+    font-weight: 700;
+    color: #111;
+    margin-bottom: 24px;
+    letter-spacing: .5px;
+  }
+
+  /* Month */
+  .archive-month {
+    margin-bottom: 32px;
+  }
+  .archive-month:last-child {
+    margin-bottom: 0;
+  }
+  .month-heading {
+    font-size: 16px;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 16px;
+    padding-left: 4px;
+  }
+
+  /* Entry */
+  .archive-entry {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f0f0;
+    transition: border-color .2s;
+  }
+  .archive-entry:hover {
+    border-bottom-color: #ddd;
+  }
+  .archive-entry:last-child {
+    border-bottom: none;
+  }
+
+  .archive-entry-date {
+    flex-shrink: 0;
     font-size: 13px;
     color: #bbb;
-    margin-top: 10px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 2px 12px;
+    font-variant-numeric: tabular-nums;
+    min-width: 48px;
   }
 
-  .post-excerpt {
-    margin-top: 12px;
+  .archive-entry-title {
+    flex: 1;
     font-size: 15px;
-    color: #555;
-    line-height: 1.7;
+    font-weight: 500;
+    line-height: 1.4;
   }
-
-  .post-btn {
-    display: inline-block;
-    margin-top: 18px;
-    background: #111;
-    color: #fff;
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: .5px;
-    padding: 9px 24px;
+  .archive-entry-title a {
+    color: #111;
     text-decoration: none;
-    transition: opacity .2s;
+    transition: color .2s;
   }
-  .post-btn:hover { opacity: .8; }
+  .archive-entry-title a:hover {
+    color: #888;
+  }
 
-  /* Sidebar icon */
+  .archive-entry-category {
+    flex-shrink: 0;
+    font-size: 11px;
+    color: #bbb;
+    background: #f8f8f8;
+    padding: 2px 10px;
+    border-radius: 2px;
+    letter-spacing: .3px;
+  }
+
+  /* Stats */
+  .archive-stats {
+    margin-top: 48px;
+    padding-top: 24px;
+    border-top: 1px solid #eee;
+    text-align: center;
+    font-size: 13px;
+    color: #bbb;
+  }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    padding: 32px 0 80px;
+    font-size: 12px;
+    color: #ccc;
+    border-top: 1px solid #f5f5f5;
+  }
+
+  /* Sidebar (same as homepage) */
   .sidebar-toggle {
     position: fixed;
     bottom: 32px;
@@ -125,7 +187,6 @@
   .sidebar-toggle:hover { opacity: .8; }
   .sidebar-toggle svg { width: 20px; height: 20px; }
 
-  /* Sidebar overlay */
   .sidebar-overlay {
     position: fixed;
     inset: 0;
@@ -173,6 +234,7 @@
     transition: color .2s;
   }
   .sidebar a:hover { color: #111; }
+  .sidebar a.active { color: #111; font-weight: 600; }
 
   .sidebar-close {
     position: absolute;
@@ -188,21 +250,14 @@
   }
   .sidebar-close:hover { color: #111; }
 
-  /* Footer */
-  footer {
-    text-align: center;
-    padding: 32px 0 80px;
-    font-size: 12px;
-    color: #ccc;
-    border-top: 1px solid #f5f5f5;
-  }
-
   /* Mobile */
   @media (max-width: 520px) {
     header { padding-top: 32px; }
     .container { padding: 0 16px; }
-    .post-title { font-size: 19px; }
-    .post { padding: 32px 0; }
+    .archive-entry { gap: 12px; }
+    .archive-entry-date { min-width: 40px; }
+    .archive-entry-title { font-size: 14px; }
+    .archive-entry-category { display: none; }
     .sidebar-toggle { bottom: 20px; right: 20px; }
     .sidebar { width: 260px; right: -260px; }
   }
@@ -213,48 +268,45 @@
 <header>
   <a href="/" class="site-title">WAFILOG</a>
   <nav>
-    <a href="/" class="active">首页</a>
-    <a href="/archives/">归档</a>
+    <a href="/">首页</a>
+    <a href="/archives/" class="active">归档</a>
   </nav>
 </header>
 
 <main class="container">
-  <!-- Article 2 -->
-  <article class="post">
-    <h2 class="post-title">
-      <a href="https://miwafi.github.io/2026/07/27/SourceVRAD/#more">追寻起源引擎的光与影</a>
-    </h2>
-    <div class="post-meta">
-      <span>2026-07-27</span>
-      <span>·</span>
-      <span>技术调查</span>
-      <span>·</span>
-      <span>预计阅读 8 分钟</span>
-    </div>
-    <p class="post-excerpt">
-      2004年，Valve发布了《半条命2》。这款游戏不仅在叙事和物理引擎上树立了新的标杆，其画面表现同样令人惊叹——这些静态场景中的光照，并非实时计算得出，而是由一个名为 VRAD 的命令行工具在编译阶段预先"烘焙"进去的。本文深入探索 VRAD 的技术原理，从辐射度算法到光子映射，揭示起源引擎光影背后的秘密。
-    </p>
-    <a class="post-btn" href="https://miwafi.github.io/2026/07/27/SourceVRAD/#more">阅读全文</a>
-  </article>
+  <div class="page-title">归档</div>
 
-  <!-- Article 4 -->
-  <article class="post">
-    <h2 class="post-title">
-      <a href="https://miwafi.github.io/2026/08/12/Driverdevelop/#more">Windows内核驱动食用教程</a>
-    </h2>
-    <div class="post-meta">
-      <span>2026-08-12</span>
-      <span>·</span>
-      <span>教程</span>
-      <span>·</span>
-      <span>预计阅读 6 分钟</span>
-    </div>
-    <p class="post-excerpt">
-      本文基于微软官方WDK文档与我的排错经验，覆盖VS2022 组件选择、WDK安装后ntddk.h找不到的根因与修复、最小 KMDF 驱动编写、编译部署与双机调试，所有步骤均可在 Windows 11 + VS2022 环境下复现。
-    </p>
-    <a class="post-btn" href="https://miwafi.github.io/2026/08/12/Driverdevelop/#more">阅读全文</a>
-  </article>
+  <div class="archive-year">
+    <h2 class="year-heading">2026</h2>
 
+    <div class="archive-month" id="2026-08">
+      <h3 class="month-heading">8月</h3>
+
+      <div class="archive-entry">
+        <span class="archive-entry-date">08-12</span>
+        <span class="archive-entry-title">
+          <a href="https://miwafi.github.io/2026/08/12/Driverdevelop/#more">Windows内核驱动食用教程</a>
+        </span>
+        <span class="archive-entry-category">教程</span>
+      </div>
+    </div>
+
+    <div class="archive-month" id="2026-07">
+      <h3 class="month-heading">7月</h3>
+
+      <div class="archive-entry">
+        <span class="archive-entry-date">07-27</span>
+        <span class="archive-entry-title">
+          <a href="https://miwafi.github.io/2026/07/27/SourceVRAD/#more">追寻起源引擎的光与影</a>
+        </span>
+        <span class="archive-entry-category">技术调查</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="archive-stats">
+    共 2 篇文章
+  </div>
 </main>
 
 <footer class="container">
