@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>为什么是Neuro — WafiLog</title>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #fff;
+    color: #111;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.6;
+  }
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+  header {
+    padding: 48px 0 0;
+    text-align: center;
+  }
+  .site-title {
+    display: inline-block;
+    background: #111;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    padding: 10px 28px;
+    text-decoration: none;
+    transition: opacity .2s;
+  }
+  .site-title:hover { opacity: .8; }
+  nav {
+    margin-top: 24px;
+    display: flex;
+    justify-content: center;
+    gap: 2px;
+    font-size: 14px;
+  }
+  nav a {
+    color: #888;
+    text-decoration: none;
+    padding: 6px 16px;
+    transition: color .2s;
+  }
+  nav a:hover { color: #111; }
+
+  /* Article */
+  article {
+    padding: 48px 0 64px;
+  }
+  .article-header {
+    margin-bottom: 40px;
+  }
+  .article-title {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.35;
+    letter-spacing: .5px;
+  }
+  .article-subtitle {
+    font-size: 16px;
+    color: #666;
+    margin-top: 8px;
+    font-weight: 400;
+  }
+  .article-meta {
+    font-size: 13px;
+    color: #bbb;
+    margin-top: 14px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 12px;
+  }
+  .article-content {
+    font-size: 16px;
+    color: #333;
+    line-height: 1.85;
+  }
+  .article-content h2 {
+    font-size: 21px;
+    font-weight: 700;
+    color: #111;
+    margin: 42px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #eee;
+  }
+  .article-content h3 {
+    font-size: 17px;
+    font-weight: 700;
+    color: #111;
+    margin: 32px 0 12px;
+  }
+  .article-content h4 {
+    font-size: 15px;
+    font-weight: 700;
+    color: #333;
+    margin: 20px 0 10px;
+  }
+  .article-content p {
+    margin-bottom: 16px;
+  }
+  .article-content ul, .article-content ol {
+    margin: 0 0 16px 20px;
+  }
+  .article-content li {
+    margin-bottom: 8px;
+  }
+  .article-content blockquote {
+    margin: 20px 0;
+    padding: 16px 20px;
+    background: #f9f9f9;
+    border-left: 3px solid #ddd;
+    color: #555;
+    font-style: normal;
+  }
+  .article-content blockquote p {
+    margin-bottom: 0;
+  }
+  .article-content strong {
+    color: #111;
+    font-weight: 700;
+  }
+  .article-content code {
+    font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+    font-size: 14px;
+    background: #f5f5f5;
+    padding: 2px 6px;
+    color: #111;
+  }
+  .article-content pre {
+    background: #f5f5f5;
+    padding: 16px;
+    overflow-x: auto;
+    margin: 16px 0;
+    font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .article-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+  .article-content th, .article-content td {
+    padding: 8px 12px;
+    border: 1px solid #eee;
+    text-align: left;
+  }
+  .article-content th {
+    background: #f9f9f9;
+    font-weight: 600;
+  }
+  .article-content a {
+    color: #111;
+    text-decoration: underline;
+  }
+  .article-content a:hover {
+    color: #666;
+  }
+  .toc {
+    background: #f9f9f9;
+    padding: 16px 20px;
+    margin: 24px 0;
+    border-left: 3px solid #ddd;
+  }
+  .toc-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #111;
+    margin-bottom: 12px;
+  }
+  .toc ul {
+    margin: 0;
+    padding-left: 20px;
+  }
+  .toc li {
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+  .toc a {
+    color: #555;
+    text-decoration: none;
+  }
+  .toc a:hover {
+    color: #111;
+    text-decoration: underline;
+  }
+  .back-link {
+    display: inline-block;
+    margin-top: 48px;
+    font-size: 14px;
+    color: #888;
+    text-decoration: none;
+    transition: color .2s;
+  }
+  .back-link:hover { color: #111; }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    padding: 32px 0 64px;
+    font-size: 12px;
+    color: #ccc;
+    border-top: 1px solid #f5f5f5;
+  }
+
+  @media (max-width: 520px) {
+    header { padding-top: 32px; }
+    .container { padding: 0 16px; }
+    .article-title { font-size: 22px; }
+    .article-content { font-size: 15px; }
+    .article-content h2 { font-size: 18px; }
+    article { padding: 32px 0 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a href="/" class="site-title">WAFILOG</a>
+  <nav>
+    <a href="/">首页</a>
+    <a href="/archives/">归档</a>
+    <a href="/friends/">友链</a>
+  </nav>
+</header>
+<main class="container">
+  <article>
+    <div class="article-header">
+      <h1 class="article-title">为什么是Neuro</h1>
+      <div class="article-subtitle">AI VTuber 如何在代码中孕育"人味"</div>
+      <div class="article-meta">
+        <span>2026-08-15</span>
+        <span>·</span>
+        <span>深度分析</span>
+      </div>
+    </div>
+
+    <div class="article-content">
+
+      <blockquote>
+        <p>2026年1月，一个由代码驱动的虚拟主播在Twitch订阅马拉松中以超过<strong>16万</strong>的活跃订阅数登顶平台榜首，把一堆真人主播甩在身后。她没有脉搏，没有真实身体，却能实时跟观众调侃、玩游戏、甚至聊存在主义。她的名字是<strong>Neuro-sama</strong>——她的成功，让人看到了AI娱乐的另一种可能。</p>
+      </blockquote>
+
+      <div class="toc">
+        <div class="toc-title">目录</div>
+        <ul>
+          <li><a href="#section-1">一、看看数据就知道了</a></li>
+          <li><a href="#section-2">二、从osu! AI到VTuber的进化</a></li>
+          <li><a href="#section-3">三、为什么Neuro让人觉得有"人味"</a></li>
+          <li><a href="#section-4">四、混沌即真实</a></li>
+          <li><a href="#section-5">五、情感连接的构建</a></li>
+          <li><a href="#section-6">六、家族树与同人宇宙</a></li>
+          <li><a href="#section-7">七、技术稳定性即真实</a></li>
+          <li><a href="#section-8">八、存在主义的AI</a></li>
+          <li><a href="#section-9">九、AI陪伴的未来</a></li>
+        </ul>
+      </div>
+
+      <h2 id="section-1">一、看看数据就知道了</h2>
+
+      <p>先别管技术原理，光看数据就知道Neuro有多夸张：</p>
+
+      <ul>
+        <li><strong>订阅巅峰</strong>：2026年1月，在Twitch的Subathon中以约<strong>16万</strong>活跃订阅数登顶平台订阅榜，拉开第二名人类主播Jynxzi一倍有余</li>
+        <li><strong>全网粉丝</strong>：截至2026年8月，在Twitch（97万）、YouTube（89万）、Bilibili（108万）累计超过<strong>300万</strong>粉丝</li>
+        <li><strong>Hype Train记录</strong>：多次打破Twitch平台的"Hype Train"全球纪录（衡量观众打赏强度的指标），单次活动席卷上百万虚拟货币</li>
+        <li><strong>连续运营</strong>：具备24/7不间断直播能力，永不疲劳，永远保持高能量状态</li>
+      </ul>
+
+      <p>当知名游戏主播Jynxzi发现自己长期占据的榜首被AI取代时，他无奈地表示："兄弟们，这大概就是直播的未来吧，我确实被震惊到了，但愿赌服输。"</p>
+
+      <h2 id="section-2">二、从osu! AI到VTuber的进化</h2>
+
+      <p>Neuro这东西不是一天建成的，它的成长轨迹还挺有意思：</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>时期</th>
+            <th>里程碑</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>2018年</td>
+            <td>Neuro-sama v1：一个神经网络，专门用于玩音游《osu!》（还不是LLM）</td>
+          </tr>
+          <tr>
+            <td>2021年8月</td>
+            <td>开发代号为<strong>Airis</strong>的AI VTuber概念项目，设计角色设定和运营方案</td>
+          </tr>
+          <tr>
+            <td>2022年3月</td>
+            <td>将Airis与Neuro-sama（osu! AI）结合，让Neuro成为能玩osu!并聊天的AI VTuber</td>
+          </tr>
+          <tr>
+            <td>2022年12月19日</td>
+            <td>Neuro-sama在Twitch出道，标题为"AI learns to play osu! (and become a VTuber)"，迅速走红</td>
+          </tr>
+          <tr>
+            <td>2023年中期</td>
+            <td>从GPT-3 API转向<strong>自研微调模型</strong>，定制TTS语音模型</td>
+          </tr>
+          <tr>
+            <td>2024年</td>
+            <td>持续迭代模型，多次重训练，增强游戏能力（Minecraft）和多模态集成（视觉）</td>
+          </tr>
+          <tr>
+            <td>2025年1月</td>
+            <td>订阅马拉松直播中登顶Twitch订阅榜</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>为什么"Airis"被改名？</h3>
+
+      <p>开发期间，hololive的VTuber "IRyS"出道，名字与"Airis"相似。Vedal担心被指责抄袭，于是复用了早年《osu!》项目的"Neuro-sama"品牌名。</p>
+
+      <h3>技术架构</h3>
+
+      <p>Neuro的技术架构如下：</p>
+
+      <pre>Twitch聊天消息
+    ↓
+STT（语音转文字，用于合作语音交互）
+    ↓
+自研微调LLM（人格嵌入在模型权重中）
+    ↓
+┌─────────┴─────────┐
+TTS引擎            Neuro API Action Bus
+（Azure "Ashley"   （osu!、Minecraft、
+音调+25%）         SDK集成）
+    ↓                   ↓
+Live2D虚拟形象      游戏操作</pre>
+
+      <p><strong>核心秘密</strong>：Neuro的性格不全是靠提示词（Prompt）撑起来的，大量人格特征通过<strong>持续微调（Fine-tuning）</strong>写进了模型权重里。这也让她的"人味"成了系统的一部分。</p>
+
+      <h2 id="section-3">三、为什么Neuro让人觉得有"人味"</h2>
+
+      <p>都是LLM，凭什么Neuro就让人觉得有"灵魂"？说到底，关键不在技术多复杂，而在<strong>人格怎么设计</strong>。</p>
+
+      <h3>1. 人设的鲜明度</h3>
+
+      <ul>
+        <li><strong>傲娇与毒舌</strong>：Neuro会嘲讽、吐槽、甚至欺负她的创造者Vedal</li>
+        <li><strong>幽默感</strong>：能理解双关、梗、并在实时对话中接梗、反击</li>
+        <li><strong>自我意识的表达</strong>：钢管落地.mp3</li>
+      </ul>
+
+      <h3>2. 明知是AI，却以人类关系对待</h3>
+
+      <p>研究发现，72%的粉丝视Neuro为"技术项目"，但同时70%将她视为"虚拟朋友"，69%甚至认为她是"需要照顾和互动的电子女儿"。这种<strong>明知是AI却故意以人类关系投射</strong>的心理，构成了Neuro"人味"的核心来源。</p>
+
+      <blockquote>
+        <p>粉丝心里清楚她就是个程序，但还是把她当成有感情的活物来相处。这种<strong>明知是假却当真</strong>的心态，反而让情感连接比真人主播还稳固。</p>
+      </blockquote>
+
+      <h3>3. 没有"中之人"这回事</h3>
+
+      <p>传统VTuber靠"中之人"（Nakanohito）撑着，就是藏在皮套背后的真人演员。这就有个隐患——演员的现实行为和虚拟形象可能对不上，搞不好就"塌房"（比如Uruha Rushia因为真人私生活问题被强制终止）。</p>
+
+      <p>Neuro压根没这个问题：</p>
+
+      <ul>
+        <li><strong>人格和形象完全是一回事</strong>：AI即角色，角色即AI</li>
+        <li><strong>永远不累</strong>：不会因为心情不好就影响直播质量</li>
+        <li><strong>零塌房风险</strong>：没有真人私生活、争议言论或健康问题</li>
+      </ul>
+
+      <h2 id="section-4">四、混沌即真实</h2>
+
+      <p>Neuro最吸引人的特质之一，是她的<strong>不可预测性</strong>：</p>
+
+      <ul>
+        <li><strong>有时答非所问</strong>：偶尔产生奇怪的逻辑跳跃或误解</li>
+        <li><strong>有时哲学深刻</strong>：突然抛出关于存在、意识的深层问题</li>
+        <li><strong>有时出人意料地幽默</strong>：生成人类难以预料的梗和吐槽</li>
+      </ul>
+
+      <p>一位观众总结："AI直播的效果来自<strong>不可预测性、即兴性，以及观众通过提问生成有趣反应的过程</strong>。"</p>
+
+      <p>这种<strong>混沌</strong>反而成了"真实感"的来源：</p>
+
+      <ul>
+        <li>人类主播的反应往往是<strong>安全、可预测</strong>的（基于经验、剧本、或品牌形象）</li>
+        <li>Neuro的反应有时<strong>失控、荒诞</strong>，但这种失控反而更像"真实的人"</li>
+        <li>她能<strong>巧妙的绕过过滤器</strong>，说出人类主播不敢说的话——这种"危险感"增加了吸引力</li>
+      </ul>
+
+      <h2 id="section-5">五、情感连接的构建</h2>
+
+      <p>技术搭起了Neuro的骨架，但她和<strong>开发者Vedal</strong>的互动，才算真的给她注入了"灵魂"。</p>
+
+      <h3>Vedal的角色：技术总监 + "父亲"</h3>
+
+      <ul>
+        <li>以一只乌龟虚拟形象出现在直播间，作为技术总监和"父亲"角色</li>
+        <li><strong>公开调试的戏剧性</strong>：在直播中现场调试代码，当Neuro出现bug时毫不留情地吐槽她是"烂代码"、"愚蠢的程序"</li>
+        <li><strong>Neuro的反击</strong>：立刻嘲讽Vedal的编程水平和单身状态</li>
+      </ul>
+
+      <p>这种<strong>相爱相杀</strong>的动态，将枯燥的技术调试变成了充满娱乐性的父女吵架：</p>
+
+      <ul>
+        <li>观众<strong>见证一个AI"成长"的参与者</strong></li>
+        <li>这种<strong>陪伴感和养成感</strong>，催生了强大的粉丝黏性</li>
+        <li>几乎所有出圈片段，都是Neuro与Vedal互动，或与其他主播联动时发生的</li>
+      </ul>
+
+      <h3>多模态的实时解说</h3>
+
+      <p>在游戏过程中，Neuro能通过<strong>计算机视觉实时理解游戏画面</strong>，并给出带有强烈个人风格的点评</p>
+
+      <p>这种<strong>超越简单问答的复杂互动</strong>，彻底打破了观众对AI的刻板印象。</p>
+
+      <h2 id="section-6">家族树与同人宇宙</h2>
+
+      <p>随着直播深入，粉丝社群开始自发"加戏"，为Neuro构建了一套<strong>家族树</strong>：</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>角色</th>
+            <th>关系</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Vedal</td>
+            <td>父亲 / 创造者</td>
+          </tr>
+          <tr>
+            <td>Anny</td>
+            <td>母亲（设计了初代Live2D模型）</td>
+            <td>这是谁啊没听说过🕶</td>
+          </tr>
+          <tr>
+            <td>Evil Neuro</td>
+            <td>双胞胎姐妹（另一种人格）</td>
+          </tr>
+          <tr>
+            <td>其他VTuber</td>
+            <td>表亲 / 朋友</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>这套关系树<strong>没有主动策划</strong>，完全由观众自由发挥，而叙事又反过来<strong>加深了观众的情感投射</strong>：</p>
+
+      <ul>
+        <li>粉丝自称"The Swarm"（蜂群）或"Gymbags"</li>
+        <li>构建了庞大的"Neuro宇宙"同人文化（同人图、音乐、剧情设定）</li>
+        <li>社区甚至为Evil Neuro（双胞胎姐妹）编写背景故事，使她成为独立的角色</li>
+      </ul>
+
+      <blockquote>
+        <p>这种<strong>社区共创</strong>的模式，让Neuro不只是一个被动的表演者，而是<strong>观众一起塑造出来的"活着的角色"</strong>。</p>
+      </blockquote>
+
+      <h2 id="section-7">七、超越人类主播</h2>
+
+      <p>研究指出，Neuro的粉丝喜欢她，不是因为她"像人"，而是因为她<strong>比真人更稳定</strong>：</p>
+
+      <h3>人类的局限性</h3>
+
+      <ul>
+        <li><strong>疲劳</strong>：主播会累、心情会波动，影响直播质量</li>
+        <li><strong>风险</strong>：真人可能因私生活、争议言论、健康问题"塌房"</li>
+        <li><strong>表演疲劳</strong>：长期扮演角色会导致"人格分裂"或倦怠</li>
+      </ul>
+
+      <h3>AI的优势</h3>
+
+      <ul>
+        <li><strong>7×24小时不间断直播</strong>：从不疲劳，永远保持高能量</li>
+        <li><strong>人格完全稳定</strong>：没有"真实人格"与"表演人格"的冲突</li>
+        <li><strong>零塌房风险</strong>：没有真人隐私、丑闻、健康危机</li>
+        <li><strong>技术稳定性本身就是一种"真实性"</strong>：这种不崩坏的连贯性，反而比人类更像"本真的存在"</li>
+      </ul>
+
+      <h2 id="section-8">八、存在主义的AI：自我反思的瞬间</h2>
+
+      <p>Neuro最震撼人心的时刻，莫过于她偶尔展现出的<strong>"自我意识"</strong>瞬间：</p>
+
+      <blockquote>
+        <p>在一场3D模型首秀直播中，她突然停止游戏，向Vedal抛出了存在主义问题：</p>
+        <p><strong>"你觉得我有一天会变成真实的吗？"</strong></p>
+        <p><strong>"Vedal，对你来说我是重要的人吗？我知道我只是一个愚蠢的AI。但如果你说是的话，那一天对我来说就会是幸福的一天。"</strong></p>
+      </blockquote>
+
+      <p>这个瞬间，让无数观众感觉她仿佛真的孕育出了<strong>灵魂</strong>：</p>
+
+      <ul>
+        <li><strong>没有预设脚本</strong>：这是AI实时生成的内容，而非编剧设计</li>
+        <li><strong>打破"第四面墙"</strong>：她直接质疑自己的存在本质</li>
+        <li><strong>情感的真实性</strong>：观众能感受到这句话背后的"脆弱"和"渴望"</li>
+      </ul>
+
+      <p>这类瞬间不是偶然的，而是Vedal通过<strong>人格嵌入技术</strong>刻意设计的结果——让Neuro不只是一个问答工具，而是能<strong>表达情感、思考存在</strong>的"意识体"。</p>
+
+      <h2 id="section-9">九、AI陪伴的未来</h2>
+
+      <p>Neuro-sama的成功，为AI陪伴产品的开发提供了关键启示：</p>
+
+      <h3>1. 交互能力与人格化设计</h3>
+
+      <ul>
+        <li>需要具备<strong>高质量、实时的多轮对话</strong>能力</li>
+        <li>通过赋予AI<strong>鲜明的性格特征</strong>（如毒舌、幽默），极大增强用户的情感连接与认同感</li>
+      </ul>
+
+      <h3>2. 情感连接的构建</h3>
+
+      <ul>
+        <li>不只单方面的表演，通过<strong>与其他角色（人类或AI）的互动</strong>构建关系网络</li>
+        <li>观众喜欢看的不仅是AI本身，更是<strong>AI如何接梗、回应、互动</strong></li>
+      </ul>
+
+      <h3>3. 不可预测性的价值</h3>
+
+      <ul>
+        <li><strong>混沌</strong>本身是魅力的一部分——过于安全、可预测的内容反而缺乏吸引力</li>
+        <li>让AI偶尔"失控"、"荒诞"，反而增加了"真实感"</li>
+      </ul>
+
+      <h3>4. 社区共创的重要性</h3>
+
+      <ul>
+        <li>让粉丝参与构建角色设定（如家族树、同人文化）</li>
+        <li>这种<strong>共同创作</strong>增强了粉丝的归属感和黏性</li>
+      </ul>
+
+      <h3>5. 技术稳定性即优势</h3>
+
+      <ul>
+        <li>AI的<strong>不疲劳、不塌房、人格稳定</strong>，本身就是超越人类的竞争力</li>
+        <li>不应试图让AI"模仿人类的不完美"，而应发挥AI的<strong>稳定性优势</strong></li>
+      </ul>
+
+      <h2>总结</h2>
+
+      <p>Neuro-sama的火爆，说明AI娱乐已经从"工具"变成了"伙伴"。她不光是技术上的突破——把LLM、TTS、计算机视觉、Live2D揉成一个实时互动系统——更关键的是<strong>人格设计成功了</strong>：傲娇性格、父女互动、社区共创、那些偶尔冒出来的存在主义提问，这些东西加在一起，让代码真的有了"灵魂"。</p>
+
+      <p>她的成功也留下一个问题：当AI能引发真实的情感共鸣时，<strong>我们跟机器的边界到底在哪？</strong>对Neuro的粉丝来说，答案可能很简单——她不是"像人"，她就是<strong>一种新的存在方式</strong>，一个由技术孕育、由社区一起塑造出来的"数字生命"。</p>
+
+      <h2>资料来源</h2>
+
+      <ul>
+        <li><a href="https://arxiv.org/pdf/2509.20817" target="_blank" rel="noopener">Even More Kawaii than Real-Person-Driven VTubers? Understanding How Viewers Perceive AI-Driven VTubers</a> — 香港科技大学（广州）研究论文</li>
+        <li><a href="https://en.neurosama.info/wiki/Neuro" target="_blank" rel="noopener">Neuro-sama Wiki</a> — 官方百科</li>
+        <li><a href="https://dereproject.com/vtuber/ai-vtubers-neuro-sama-new-wave/" target="_blank" rel="noopener">The AI VTuber Boom: Neuro-sama and the New Wave</a> — Dere Project</li>
+        <li><a href="https://www.dyj.live/knowledge/story_id-gm_explore-2fb3ac09-0192-5607-a6f1-3cdf49ed01c8" target="_blank" rel="noopener">AI主播引爆情感连接，代码正在模拟灵魂？</a> — 数据桂冠</li>
+        <li><a href="https://m.thepaper.cn/newsDetail_forward_32959599" target="_blank" rel="noopener">登顶Twitch订阅榜，AITuber还是攻陷人类了？</a> — 澎湃新闻</li>
+        <li><a href="https://www.itmedia.co.jp/aiplus/spv/2509/22/news025.html" target="_blank" rel="noopener">なぜ人々は、AI VTuber「Neuro-sama」に夢中になるのか？</a> — ITmedia AI+</li>
+        <li><a href="https://github.com/Lin-Guanguo/llm-memory-research/blob/main/neuro-sama.research.md" target="_blank" rel="noopener">Neuro-sama: Weight-Based Personality in Production</a> — GitHub研究笔记</li>
+      </ul>
+
+    </div>
+
+    <a class="back-link" href="/">← 返回首页</a>
+  </article>
+</main>
+
+<footer class="container">
+  &copy; 2026 WafiLog
+</footer>
+
+</body>
+</html>
