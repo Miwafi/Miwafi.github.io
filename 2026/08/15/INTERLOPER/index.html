@@ -1,0 +1,1205 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>INTERLOPER ARG解析 — WafiLog</title>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #fff;
+    color: #111;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.6;
+  }
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+  header {
+    padding: 48px 0 0;
+    text-align: center;
+  }
+  .site-title {
+    display: inline-block;
+    background: #111;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    padding: 10px 28px;
+    text-decoration: none;
+    transition: opacity .2s;
+  }
+  .site-title:hover { opacity: .8; }
+  nav {
+    margin-top: 24px;
+    display: flex;
+    justify-content: center;
+    gap: 2px;
+    font-size: 14px;
+  }
+  nav a {
+    color: #888;
+    text-decoration: none;
+    padding: 6px 16px;
+    transition: color .2s;
+  }
+  nav a:hover { color: #111; }
+
+  /* Article */
+  article {
+    padding: 48px 0 64px;
+  }
+  .article-header {
+    margin-bottom: 40px;
+  }
+  .article-title {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.35;
+    letter-spacing: .5px;
+  }
+  .article-subtitle {
+    font-size: 16px;
+    color: #666;
+    margin-top: 8px;
+    font-weight: 400;
+  }
+  .article-meta {
+    font-size: 13px;
+    color: #bbb;
+    margin-top: 14px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 12px;
+  }
+  .article-content {
+    font-size: 16px;
+    color: #333;
+    line-height: 1.85;
+  }
+  .article-content h2 {
+    font-size: 21px;
+    font-weight: 700;
+    color: #111;
+    margin: 42px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #eee;
+  }
+  .article-content h3 {
+    font-size: 17px;
+    font-weight: 700;
+    color: #111;
+    margin: 32px 0 12px;
+  }
+  .article-content h4 {
+    font-size: 15px;
+    font-weight: 700;
+    color: #333;
+    margin: 20px 0 10px;
+  }
+  .article-content p {
+    margin-bottom: 16px;
+  }
+  .article-content ul, .article-content ol {
+    margin: 0 0 16px 20px;
+  }
+  .article-content li {
+    margin-bottom: 8px;
+  }
+  .article-content blockquote {
+    margin: 20px 0;
+    padding: 16px 20px;
+    background: #f9f9f9;
+    border-left: 3px solid #ddd;
+    color: #555;
+    font-style: normal;
+  }
+  .article-content blockquote p {
+    margin-bottom: 0;
+  }
+  .article-content strong {
+    color: #111;
+    font-weight: 700;
+  }
+  .article-content code {
+    font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+    font-size: 14px;
+    background: #f5f5f5;
+    padding: 2px 6px;
+    color: #111;
+  }
+  .article-content pre {
+    background: #f5f5f5;
+    padding: 16px;
+    overflow-x: auto;
+    margin: 16px 0;
+    font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .article-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+  .article-content th, .article-content td {
+    padding: 8px 12px;
+    border: 1px solid #eee;
+    text-align: left;
+  }
+  .article-content th {
+    background: #f9f9f9;
+    font-weight: 600;
+  }
+  .article-content a {
+    color: #111;
+    text-decoration: underline;
+  }
+  .article-content a:hover {
+    color: #666;
+  }
+  .toc {
+    background: #f9f9f9;
+    padding: 16px 20px;
+    margin: 24px 0;
+    border-left: 3px solid #ddd;
+  }
+  .toc-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #111;
+    margin-bottom: 12px;
+  }
+  .toc ul {
+    margin: 0;
+    padding-left: 20px;
+  }
+  .toc li {
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+  .toc a {
+    color: #555;
+    text-decoration: none;
+  }
+  .toc a:hover {
+    color: #111;
+    text-decoration: underline;
+  }
+  .back-link {
+    display: inline-block;
+    margin-top: 48px;
+    font-size: 14px;
+    color: #888;
+    text-decoration: none;
+    transition: color .2s;
+  }
+  .back-link:hover { color: #111; }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    padding: 32px 0 64px;
+    font-size: 12px;
+    color: #ccc;
+    border-top: 1px solid #f5f5f5;
+  }
+
+  .entity-icon {
+    display: inline-block;
+    width: 20px;
+    text-align: center;
+    margin-right: 6px;
+  }
+
+  @media (max-width: 520px) {
+    header { padding-top: 32px; }
+    .container { padding: 0 16px; }
+    .article-title { font-size: 22px; }
+    .article-content { font-size: 15px; }
+    .article-content h2 { font-size: 18px; }
+    article { padding: 32px 0 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a href="/" class="site-title">WAFILOG</a>
+  <nav>
+    <a href="/">首页</a>
+    <a href="/archives/">归档</a>
+    <a href="/friends/">友链</a>
+  </nav>
+</header>
+<main class="container">
+  <article>
+    <div class="article-header">
+      <h1 class="article-title">INTERLOPER / PROJECT SKYBOX</h1>
+      <div class="article-subtitle">ARG 完整整理</div>
+      <div class="article-meta">
+        <span>2026-08-12</span>
+        <span>·</span>
+        <span>ARG 解析</span>
+      </div>
+    </div>
+
+    <div class="article-content">
+
+      <blockquote>
+        <p>一个以 <strong>Source 引擎本身为舞台</strong> 的ARG。它的"超自然现象"不是发生在游戏剧情里，而是发生在引擎的 demo 录制、地图编译、模型加载这些底层机制中。整个谜团围绕一个核心命题展开：<strong>Source 引擎的"虚空（Void）"一直在静默地记录和存储所有玩家的记忆</strong>，而一个名为 <strong>FSKY</strong> 的挪威服务器提供商（最早可追溯到 2005 年）似乎建立了一套通过 Source 引擎介质来通信的服务器系统。</p>
+      </blockquote>
+
+      <div class="toc">
+        <div class="toc-title">目录</div>
+        <ul>
+          <li><a href="#section-1">一、核心机制：INTERLOPE 命令与"虚空"</a></li>
+          <li><a href="#section-2">二、FSKY：谜团的源头组织</a></li>
+          <li><a href="#section-3">三、主要实体图鉴</a></li>
+          <li><a href="#section-4">四、双线调查时间线</a></li>
+          <li><a href="#section-5">五、SPISE 代码系统：密码学收束</a></li>
+          <li><a href="#section-6">六、虚空探索的关键发现</a></li>
+          <li><a href="#section-7">七、现状与核心未解谜团</a></li>
+        </ul>
+      </div>
+
+      <h2 id="section-1">一、核心机制：INTERLOPE 命令与"虚空"</h2>
+
+      <p>整个 ARG 的技术根基是一条被称为 <strong>INTERLOPE Command</strong> 的隐藏命令。它本质上是一个被某个未知作者埋入 Source 引擎的<strong>后门（backdoor）/ 漏洞（exploit）</strong>——没人知道它是怎么被创建、如何运作的，只知道它很可能<strong>并非虚空建造者的本意</strong>，因此常被调查者称为"漏洞"。</p>
+
+      <h3>INTERLOPE 命令</h3>
+
+      <ul>
+        <li><strong>触发条件</strong>：《半条命2》<code>d1_town_01</code> 地图（"We Don't Go to Ravenholm" 章节第一关）某条通常空着的小巷里，会<strong>零星出现</strong>一个被修改过的 <strong>"Umbrella Man" 涂鸦</strong>（<code>decal_graffiti038b</code>）。涂鸦出现的时间窗口极短，<strong>每次仅持续数小时</strong>。它的出现标志着 INTERLOPE 命令激活，此时多数 Source 引擎游戏可以反复拉取 demo，直到涂鸦消失、命令再次关闭。</li>
+        <li><strong>作用机制</strong>：这条命令相当于"虚空"的后门，从虚空中"拉取" demo。但<strong>拉取是有代价的</strong>——拉取 demo 似乎会让虚空内的核心实体 <strong>INTERLOPER 停止移动</strong>，直到该 demo 录制完毕。换言之，每次"偷看"都会短暂定格被观察的对象。</li>
+        <li><strong>生成的 demo 有分类</strong>（Type 1–Type 7），其中 <strong>Type 5</strong> 是最具代表性的"完整实体 + 环境交互" demo（如 <code>cstrike</code>、<code>fortress</code>、<code>spookycoast</code>、<code>misty</code>、<code>helmetcreek</code> 等）。</li>
+        <li><strong>Ordinance 调查后</strong>：涂鸦纹理被替换，INTERLOPE 命令开始<strong>专门产生 Type 7</strong> demo，类型多样性从此丧失。</li>
+      </ul>
+
+      <h3>Eida 的两种早期进入方式（不同于社区的 Portal RTX 路线）</h3>
+
+      <p>在 Anomidae 之前，Eida Machinima 已独立摸索出两条进入虚空的路径，但都语焉不详：</p>
+
+      <ol>
+        <li><strong>耗时数天的生成法</strong>：Eida 能以某种方式让 demo <strong>连续生成一整夜甚至数天</strong>。这几乎不可能是靠涂鸦触发的（涂鸦一次只出现几小时），所以他多半有<strong>绕过涂鸦的私有方法</strong>。他在视频结尾曾留下线索：让观众连接一个<strong>如今已失效的 IP 地址</strong>并参考前两集（已丢失）的指令——因此这套方法至今成谜。</li>
+        <li><strong>Hammer 强制指定地图法</strong>：Eida 还找到了一种<strong>强制在 Hammer Editor 自制地图上生成 demo</strong> 的手段，用于测试他捕获到的某个实体。这套流程产出了著名的 <strong><code>longtrap</code> demo</strong>——展示了该实体从 Eida 的自制地图，穿越虚空，抵达《半条命2》早期泄密版中的 <strong><code>hazflick</code></code></strong> 地图的全过程。</li>
+      </ol>
+
+      <h3>虚空（The Void）</h3>
+
+      <p>又称 <strong>Source Void / Demo Void / FSKY Void</strong>，是一个跨越未知长宽高的巨大空间：</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>特性</th>
+            <th>说明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>记忆存储</td>
+            <td>能够记录和存储"记忆（memories）"——即玩家在各种 Source 引擎游戏中的事件</td>
+          </tr>
+          <tr>
+            <td>跨游戏链接</td>
+            <td>与几乎所有 Source 引擎游戏实例兼容并链接，穿越虚空可以实现游戏实例间的直接连接</td>
+          </tr>
+          <tr>
+            <td>地图尺寸突破</td>
+            <td>正常 Source 地图最大 32,768 立方 hammer 单位，但链接到虚空的游戏实例允许远超此边界的几何</td>
+          </tr>
+          <tr>
+            <td>核心实体</td>
+            <td>虚空内有一个不断移动的实体叫 <strong>INTERLOPER</strong>，其起源未知。SourceBox 程序的 <strong>tracker</strong> 功能跟着它走，记录文件为 <code>INTERLOPE.dme</code></td>
+          </tr>
+          <tr>
+            <td>背景音轨</td>
+            <td>多种虚空探索过程中会持续播放 <strong><code>drone2lp.wav</code></strong> 这一音轨</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>int_menu 的"回放镜像"机制（第二次进入方式）</h3>
+
+      <p>Portal Incident 之后，Anomidae 发现 <strong>Portal with RTX</strong> 处于损坏状态时反而不崩溃。连接该客户端会加载一张名为 <strong><code>int_menu</code></strong> 的地图——一片巨大的、黑白棋盘格地板的空旷空间（这一棋盘格母题反复出现在所有与虚空相关的地图中）。</p>
+
+      <p>关键机制在于：</p>
+
+      <ul>
+        <li>在 <code>int_menu</code> 上<strong>可以录制 demo，但无法回放</strong>；</li>
+        <li>然而，当把这段 demo <strong>放到另一个 Source 引擎客户端里去播放</strong>时，Portal RTX 客户端会在虚空里<strong>无纹理地"重演"</strong> demo 中的动作——相当于把 demo 变成了观察虚空的"镜子"。</li>
+        <li>用 <code>spectate</code> 指令离开地图边界，即可从这个镜面窗口<strong>直接走入虚空</strong>。这条路径在 INTERLOPER 7 中通过 <strong>Void Probes</strong> 进一步精炼，并配合专门程序从发现的站点<strong>提取资源</strong>，构成了第一、二次远征的技术基础。</li>
+      </ul>
+
+      <p>这种探索方式有明显局限：发现新东西极慢、多数尝试以崩溃告终；且会<strong>吸引 VRAD-OR 实体</strong>（见实体图鉴），它们碰撞客户端即触发崩溃。Portal RTX 视角本身也无纹理、视野极短。</p>
+
+      <h3>SourceBox 立方体的完整能力清单（最终进入方式）</h3>
+
+      <p>SourceBox 程序会在任何已连接的 Source 引擎客户端中（自动或手动）生成一个<strong>内部纹理缺失的小白立方体</strong>。它的能力远不止"占位"：</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>能力</th>
+            <th>说明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Tracker 生成</strong></td>
+            <td>在客户端中生成 INTERLOPER 的追踪记录 <code>INTERLOPE.dme</code></td>
+          </tr>
+          <tr>
+            <td><strong>伤害激活</strong></td>
+            <td>立方体可被特定伤害源"激活"——包括物理反应、Counter-Strike: Source 的 A.W.P. 狙击枪、Garry's Mod 插件 GBOMBS 的氢弹</td>
+          </tr>
+          <tr>
+            <td><strong>Cube Capture（立方体捕获）</strong></td>
+            <td>当立方体在<strong>被损坏的 Xbox 模拟器客户端</strong>中被激活时，立方体和其周围区域会被传送到模拟器内的虚空中</td>
+          </tr>
+          <tr>
+            <td><strong>Spray 入水访问记忆</strong></td>
+            <td>把立方体放入水中，配合 Source 引擎的 spray 系统，可前往虚空中特定的记忆（详见第六节）</td>
+          </tr>
+          <tr>
+            <td><strong>Aimbot 跨虚空锁敌</strong></td>
+            <td>内置 aimbot 功能，能锁定其他玩家或立方体，<strong>即便目标身在虚空之中</strong></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>Anomidae 正是趁 INTERLOPER 卡在拉取 demo 的瞬间，在它附近激活了一个立方体，把 INTERLOPER 本身、以及当时所在的早期版 Kleiner 实验室地图一并"捕获"进了模拟器客户端——从而<strong>再次把所有 Source 客户端通过虚空互相连通</strong>。他以筹划"第五次也是最后一次远征"为幌子，用这套流程试图让虚空变得<strong>不可访问</strong>，并最终以此终结了 INTERLOPER 调查。</p>
+
+      <h3>进入虚空的演化路径</h3>
+
+      <pre>INTERLOPE 命令（涂鸦触发）── Eida 的私有 IP 法 / Hammer 强制法（早期，已失传）
+    ↓
+Portal RTX 的 int_menu（Portal Incident 后）→ 回放镜像 + Void Probes
+    ↓
+Skyghost 事件（Tuesday Incident 后）→ F11 全客户端无画面互联
+    ↓
+Ordinance 地图控制（社区调查）→ view.vtf 渲染
+    ↓
+SourceBox 立方体捕获（最终手段）→ Cube Capture + spray 入水</pre>
+
+      <h2 id="section-2">二、FSKY：谜团的源头组织</h2>
+
+      <p>FSKY 是一家<strong>基于挪威的 Source 游戏服务器托管商</strong>，已知早在 2005 年就已存在。其论坛广告自称拥有"喜爱的游戏与模组"、"沉浸式世界"，是"游戏娱乐的未来"。</p>
+
+      <h3>FSKY 留下的关键痕迹</h3>
+
+      <ol>
+        <li><strong><code>fortress</code> demo</strong>：在 RED 基地阳台用 brush 拼出 <strong>"FSKY"</strong> 字样，靠近会触发 demo 录制；在 Hammer 中查看这些字母，其名称为 <strong>"fuckyou"</strong></li>
+        <li><strong>Tuesday Manifest 中的 <code>data86</code></strong>：在 Team Fortress 2 demo 生成的地图的 3D 天空盒深处隐藏着 "FSKY"</li>
+        <li><strong>DM Editor 关联</strong>：DMNPC 的命名规范暗示它们与 DM Editor 和 FSKY 有关联</li>
+        <li><strong>Valve 关联</strong>：FSKY 似乎与 Valve 有联系——<code>makeface</code> demo 使用了 Source 引擎开发期间的缺失纹理并带有 VHS 画质，暗示其来自《半条命2》开发时期</li>
+        <li><strong><code>cge7-193</code> 服务器</strong>：社区发现的 FSKY 相关服务器，成为后续 ORDINANCE 等地图调查的入口</li>
+      </ol>
+
+      <blockquote>
+        <p>Anomidae 在 INTERLOPER 9 中总结：<strong>这个谜团的起源毫无疑问指向一系列连接到 FSKY 的服务器，这些服务器使用 Source 引擎作为介质来传递特殊信息，并且它们为了某个"某人"而存在</strong>。</p>
+      </blockquote>
+
+      <h2 id="section-3">三、主要实体图鉴</h2>
+
+      <h3><span class="entity-icon">🌑</span>Umbrella Men（伞人）</h3>
+
+      <ul>
+        <li>采用 <strong>G-Man 模型</strong>重度修改而成，几乎被染成黑色，眼睛和西装领口完全透明</li>
+        <li>存在多个个体，出现在 <code>spookycoast</code>、<code>misty</code> 等 demo 中</li>
+        <li>观察玩家或攻击 DMNPC，<strong>动机不明</strong></li>
+      </ul>
+
+      <h3><span class="entity-icon">🤖</span>DMNPC</h3>
+
+      <p>全称来自 Anomidae 保存的 Type 5 demo（<code>cstrike</code> 和 <code>fortress</code>）。在 cstrike 中我们视角的模型在 Hammer Editor 中名为 <code>dmnpc_capture_pawn</code>，模型名 <code>ent_dmnpc_tleet</code>。</p>
+
+      <p><strong>特征：</strong></p>
+
+      <ul>
+        <li>拥有全身运动与环境交互能力（捡罐头、用枪射击、指向兴趣点、double take）</li>
+        <li>似乎被 <strong>hint node（提示节点）</strong> 吸引</li>
+        <li>可以被杀死（demo 中会听到奇怪的溺水音效）</li>
+        <li>在 <code>spookycoast</code> 中出现过一个发白光的 DMNPC（"White Eyes"），行为具有敌意</li>
+      </ul>
+
+      <h3><span class="entity-icon">💥</span>Crasher</h3>
+
+      <p>出现在各类 Source 游戏中的实体，最可能在输入 INTERLOPE 命令后触发。</p>
+
+      <p><strong>能力：</strong></p>
+
+      <ul>
+        <li>无碰撞穿越（noclip）</li>
+        <li>切换模型</li>
+        <li>直接攻击玩家导致游戏崩溃</li>
+      </ul>
+
+      <p>Eida Machinima 的《Weird Crash on TF2》记录了其实体证据。社区推测它们可能由玩家控制，或与 Umbrella Man 有关。</p>
+
+      <h3><span class="entity-icon">👁</span>Office Heads</h3>
+
+      <p>仅在 Tuesday Manifest 的 <code>data43</code>（CS:GO demo，"officehead"）中出现。</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>特征</th>
+            <th>详情</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>外观</td>
+            <td>巨大的黑色头部，眼睛和嘴部有极亮的玩家纹理，看起来像发光</td>
+          </tr>
+          <tr>
+            <td>内部名称</td>
+            <td><code>ent_undef</code></td>
+          </tr>
+          <tr>
+            <td>音效</td>
+            <td>移动时播放钟琴音效，越靠近越响</td>
+          </tr>
+          <tr>
+            <td>行为</td>
+            <td>发现玩家后加速、张开嘴眼、播放 "hello" 音效，然后冲向 DMNPC 播放怪异音乐</td>
+          </tr>
+          <tr>
+            <td>关联</td>
+            <td>与 White Eyes、Umbrella Man 有相似特征</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3><span class="entity-icon">🌸</span>Mona / Olive</h3>
+
+      <p>Eida Machinima 第八次调查期间捕获的实体。</p>
+
+      <ul>
+        <li>最初通过推字母拼出 <strong>"MONA"</strong> 而得名</li>
+        <li>但在《Correcting the record》中暗示其真名可能是 <strong>Olive</strong></li>
+        <li>Eida 通过<strong>伤害它</strong>来"激活"它</li>
+        <li>最终在《I'm Done. Goodbye.》中将其删除</li>
+        <li>名字 "Mona" 也出现在 Eida 2007 年的《Garrysmod Zombie Slayer》中——一个叫 Mona 的女性市民角色</li>
+      </ul>
+
+      <h3><span class="entity-icon">👻</span>Skyghost</h3>
+
+      <p>Tuesday Manifest 生成期间，<code>projectskybox.exe</code> 运行时捕获的实体，PROJECT SKYBOX 称其为 skyghost。</p>
+
+      <ul>
+        <li>在后续的 INTERLOPER A–F 中被持续研究</li>
+        <li>表现出生成模型、传送、"被动循环（passive cycle）"等行为</li>
+        <li>最终在 INTERLOPER F 中被 Anomidae 用 <strong>FLASHLIGHT NUKE</strong> 攻击，彻底切断了与服务器的连接</li>
+      </ul>
+
+      <h3><span class="entity-icon">😇</span>Angel（天使）</h3>
+
+      <p>Anomidae 在虚空坠落中避开了扭曲的 Umbrella Man 后，在一个神秘复合体中发现的巨大挣扎的人形实体。</p>
+
+      <ul>
+        <li>与其他 Umbrella Man 相似，但没有拿伞，而是戴着<strong>宽檐太阳帽</strong>（纹理缺失）</li>
+        <li><strong>不具敌意</strong>，甚至引导 Anomidae 看到了一张名为 <strong>Axlvote</strong> 的地图</li>
+        <li>社区给它起了 "Angel" 这个流行的名字</li>
+      </ul>
+
+      <h3><span class="entity-icon">⚙️</span>VRAD-OR</h3>
+
+      <p>只存在于 Demo Void 中的奇异实体，<strong>没有关联模型</strong>。</p>
+
+      <ul>
+        <li>接触玩家后会激活 VRAD（Valve 官方的光照计算工具）</li>
+        <li>但执行的是<strong>修改版 VRAD</strong>——从未知来源获取光照数据，生成到 <code>c:/users/jan/desktop/new folder/v_test.bsp</code>，随后游戏崩溃</li>
+        <li>首次出现在 INTERLOPER 7 中 <code>cp_steel</code> 外 Demo Void 里的一个盒子中</li>
+      </ul>
+
+      <h3><span class="entity-icon">🟦</span>Ordinance Entities</h3>
+
+      <p>Ordinance 渲染中发现的多种实体，行为各异，使用 Source 引擎的各种模型。</p>
+
+      <h3><span class="entity-icon">🟫</span>Combine Elite 控制的实体</h3>
+
+      <p>Ordinance 调查期间反复出现的实体，栖居在 INTERLOPER 7 创建的 Void Probe 中，会生成并控制玩家 pawn。在 INTERLOPER F 中，它们被从 Point of Interest 创建并送入 Source Void，为未知目的寻找并最终销毁记忆。</p>
+
+      <h2 id="section-4">四、双线调查时间线</h2>
+
+      <p>ARG 有两条并行调查脉络：<strong>Eida Machinima</strong>（2007–2014）和 <strong>Anomidae</strong>（2022–至今）。</p>
+
+      <h3>4.1 Eida Machinima 时代（2007–2014）</h3>
+
+      <table>
+        <thead>
+          <tr>
+            <th>时间</th>
+            <th>事件</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>2007.01.07</td>
+            <td>Eida Machinima 频道发布最早的已知视频《TOP 5 PS3 GAMES》</td>
+          </tr>
+          <tr>
+            <td>2007.10.30</td>
+            <td>发布最热门视频《Garrysmod Zombie Slayer》（107,011 次观看），角色 Mona 首次出现</td>
+          </tr>
+          <tr>
+            <td>2007.10.30</td>
+            <td>同日上传《gary man eats tacos and DIES》——Gman 吃塔可钟</td>
+          </tr>
+          <tr>
+            <td>2009.09.09</td>
+            <td>上传《Garrymans Episode 4: Stop the Darkmans》，Eida 和 Mona 对抗 Darkmans</td>
+          </tr>
+          <tr>
+            <td>2011.06.26</td>
+            <td>Anomidae 创建 Columbidae YouTube 频道（名 SuperMutantSpaceCat）</td>
+          </tr>
+          <tr>
+            <td>2011.11.21</td>
+            <td>发布《Interloper Episode 3 The Ghosts of City 17》，展示 Interloper 鬼魂跟随，生成 <code>longtrap</code> demo</td>
+          </tr>
+          <tr>
+            <td>2011.11.25</td>
+            <td>发布《Long Interloper Demo Uncut》（2 小时完整版）</td>
+          </tr>
+          <tr>
+            <td>2011.11.26</td>
+            <td>上传《Control Method》，Eida 似乎控制了 Mona（也在 cp_steel 上）</td>
+          </tr>
+          <tr>
+            <td>2012 年初</td>
+            <td>第七次调查视频：Interloper 命令停止工作，Boxrocket（疑似 DM Editor 早期版本）被覆盖，某神秘实体在 Half-Life 2: Deathmatch demo 中断时被捕获</td>
+          </tr>
+          <tr>
+            <td>2012.02.01</td>
+            <td>录制《Correcting the record》，实体拼出 <strong>"OLIVE"</strong></td>
+          </tr>
+          <tr>
+            <td>2012.02.06</td>
+            <td>发布《Interloper Episode 8 Entity Capture》，实体看似拼出 "MONA"，Mona 被激活并展示能逃出 Boxrocket</td>
+          </tr>
+          <tr>
+            <td>2012.07.13</td>
+            <td>重传《makeface demo》——某程序生成女性面部</td>
+          </tr>
+          <tr>
+            <td>2012.07.15</td>
+            <td>重传《Only footages I can find online of gris》</td>
+          </tr>
+          <tr>
+            <td>2012.09–10</td>
+            <td>上传 <strong>Spise Test [1–7]</strong> 系列，实验一个带缺失纹理的小立方体</td>
+          </tr>
+          <tr>
+            <td>2012.10.29</td>
+            <td>上传《Mona High Slopes Test》——Mona 在斜坡上挣扎</td>
+          </tr>
+          <tr>
+            <td>2012.11.03</td>
+            <td>上传《Mona Intersection》——Mona 出现并似乎将 Eida 扔到地图下；后改名为 "half life 2 is not a good game"</td>
+          </tr>
+          <tr>
+            <td>2012.11.10</td>
+            <td>上传《Mona Crushed》</td>
+          </tr>
+          <tr>
+            <td>2012.11.14</td>
+            <td>上传《Mona To Head Find》</td>
+          </tr>
+          <tr>
+            <td>2012.11.15</td>
+            <td>上传《Mona Doesn't Move Anymore》——Mona 在 HJEM Box 结构中，更加残破</td>
+          </tr>
+          <tr>
+            <td>2012.11.21</td>
+            <td>上传《I'm Done. Goodbye》——宣布离开 YouTube，删除 Mona 和所有相关内容</td>
+          </tr>
+          <tr>
+            <td>2012.11.22</td>
+            <td>录制《It's Inside my Computer here's proof》发给前视频合作伙伴 Jman，附坐标留言"请一两年后检查确保它消失了"</td>
+          </tr>
+          <tr>
+            <td>2014.07.09</td>
+            <td>Anomidae 开始调查 Flashlight Nuke Glitch（未完成的 S.E MYSTERIES 5）</td>
+          </tr>
+          <tr>
+            <td>2014.07.10</td>
+            <td>Construct expedition——使用 GMOD 10 在虚空中发现 3 个结构</td>
+          </tr>
+          <tr>
+            <td>2014.07.27</td>
+            <td><code>misty.wmv</code> 被 7localsource 上传到 hl2.net 剪辑合集</td>
+          </tr>
+          <tr>
+            <td>2014.08.06</td>
+            <td>Anomidae 发布《INTERLOPER 5: Searching In the Dark》，<code>misty.wmv</code> 被重新发现</td>
+          </tr>
+          <tr>
+            <td>2014.08.07</td>
+            <td>Anomidae 发布《INTERLOPER 6: Misty Has Been Found》——确认 <code>misty.wmv</code> 为合法 Type 5 demo</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>4.2 Anomidae 时代（2022–至今）</h3>
+
+      <table>
+        <thead>
+          <tr>
+            <th>时间</th>
+            <th>事件</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>2022.10.25</td>
+            <td>发布《INTERLOPER: Half-Life 2's Greatest Unsolved Mystery》——调查正式开始，展示 Type 5 demos 和 spookycoast</td>
+          </tr>
+          <tr>
+            <td>2022.11.09</td>
+            <td><strong>Portal Incident</strong> 发生——Portal 安装损坏，启动后只显示棋盘格地板和红色聚光灯后崩溃</td>
+          </tr>
+          <tr>
+            <td>2022.11.20</td>
+            <td>《INTERLOPER 2: Source Engine Mystery》——Portal Incident 及其后续</td>
+          </tr>
+          <tr>
+            <td>2022.12.08</td>
+            <td>发现 Portal RTX 虽处于相同状态但不会崩溃</td>
+          </tr>
+          <tr>
+            <td>2022.12.18</td>
+            <td>Eida Machinima - Video Archive 频道创建，开始归档 Eida 的已删除视频</td>
+          </tr>
+          <tr>
+            <td>2023.03 下旬</td>
+            <td>发现通过 Portal RTX 在 Half-Life 2: Deathmatch 中生成 demo 的方法</td>
+          </tr>
+          <tr>
+            <td>2023.03.22</td>
+            <td>《INTERLOPER 4: The Live Investigation》直播——Portal RTX LAN 服务器发现，生成多个 Type 5 demo（<code>whiteroom</code>、<code>ellisfloor</code>、未命名 Portal 2 demo）</td>
+          </tr>
+          <tr>
+            <td>2023.03.30</td>
+            <td>《INTERLOPER 5: A SHORT UPDATE》（未完成）——展示 <code>int_menu</code> 为空白棋盘格平面</td>
+          </tr>
+          <tr>
+            <td>2023.04.01</td>
+            <td>《ADDENDUM》——发现 Portal RTX Player Pawn</td>
+          </tr>
+          <tr>
+            <td>2023.04.05</td>
+            <td>《Another Interesting Discovery》——Player Pawn 能切换模型（类似 Crasher）</td>
+          </tr>
+          <tr>
+            <td>2023.04.06</td>
+            <td>《Demos in int_menu》——demo 可录制但无法回放</td>
+          </tr>
+          <tr>
+            <td>2023.04.14</td>
+            <td>《oh_shit.mp4》——Portal RTX 会复制 Counter-Strike: Source 录制的 demo</td>
+          </tr>
+          <tr>
+            <td>2023.04.15</td>
+            <td>《Cheats Test》——确认游戏传输输入数据而非状态数据</td>
+          </tr>
+          <tr>
+            <td>2023.05.01</td>
+            <td>《Void Exploration I》——<code>de_dust2</code> 虚空探索 90 分钟无发现</td>
+          </tr>
+          <tr>
+            <td>2023.06.15</td>
+            <td>《Void Expedition try II》——第二次 <code>de_dust2</code> 探索，79 分钟后崩溃</td>
+          </tr>
+          <tr>
+            <td>2023.06.18</td>
+            <td>《It's Inside my Computer here's proof》公开</td>
+          </tr>
+          <tr>
+            <td>2023.07.02</td>
+            <td>《Fall Test》——从 <code>ctf_2fort</code> 坠落 <strong>6.5 小时</strong>命中 Demo Void 底部</td>
+          </tr>
+          <tr>
+            <td>2023.07.10</td>
+            <td>《Construct expedition》——GMOD 10 探索发现 3 个结构</td>
+          </tr>
+          <tr>
+            <td>2023.07.23</td>
+            <td><code>misty.wmv</code> 被 Anomalous Materials Discord 发现</td>
+          </tr>
+          <tr>
+            <td>2023.07.27</td>
+            <td>《findings》——总结 4 个 Demo Void 站点</td>
+          </tr>
+          <tr>
+            <td>2023.08.05</td>
+            <td>《Final Notes》——调查仍在进行</td>
+          </tr>
+          <tr>
+            <td>2023.08.06</td>
+            <td>《INTERLOPER 5: Searching In the Dark》——正式版，含 Flashnuke 调查和 misty 重新发现</td>
+          </tr>
+          <tr>
+            <td>2023.08.07</td>
+            <td>《INTERLOPER 6: Misty Has Been Found》</td>
+          </tr>
+          <tr>
+            <td>2023.12.08</td>
+            <td>《INTERLOPER 7: Following the Light in Source》——发现 <code>cp_steel</code> Box 和 VRAD-OR 实体，发现 int_menu 的"另一侧"</td>
+          </tr>
+          <tr>
+            <td><strong>2024.02.05</strong></td>
+            <td><strong>🔴 Tuesday Incident</strong>：涂鸦回归，跨多游戏生成 <strong>465 个 demo</strong>，<code>projectskybox</code> 中捕获 <strong>Skyghost</strong></td>
+          </tr>
+          <tr>
+            <td>2024.02.05 起</td>
+            <td>SKYGHOST INVESTIGATION I 系列开始</td>
+          </tr>
+          <tr>
+            <td>2024.02.09</td>
+            <td>回忆 Eida 通过伤害激活 Mona 的方法，尝试对 Skyghost 复现</td>
+          </tr>
+          <tr>
+            <td>2024.02.16</td>
+            <td>生成 ERROR 模型后 Skyghost 短暂激活并注视 Anomidae</td>
+          </tr>
+          <tr>
+            <td>2024.02.17</td>
+            <td>尝试生成尽可能多的模型以识别 ERROR 模型</td>
+          </tr>
+          <tr>
+            <td>2024.03.04</td>
+            <td>将 Skyghost 丢入水中</td>
+          </tr>
+          <tr>
+            <td>2024.03.05</td>
+            <td>《Correcting the record》公开</td>
+          </tr>
+          <tr>
+            <td>2024.05.15</td>
+            <td>Skyghost 在 <code>projectskybox</code> 中<strong>跳舞</strong>后被激活</td>
+          </tr>
+          <tr>
+            <td>2024.05.23</td>
+            <td>《INTERLOPER 9: Something Under the Skybox》——总结 Tuesday Manifest 发现，提出 FSKY 服务器理论</td>
+          </tr>
+          <tr>
+            <td>2024.08.13</td>
+            <td>《INTERLOPER A: Ghosts in the Data》——Skyghost 被动循环、Cubemap Examination 方法</td>
+          </tr>
+          <tr>
+            <td>2024.09.13</td>
+            <td><strong>jstal1994</strong> 加入 Discord，发送 <code>zombieslayer.demo</code>，疑似 Eida 本人回归</td>
+          </tr>
+          <tr>
+            <td>2024.09.14</td>
+            <td>Eida Machinima Archive 重传 <code>GRIS.mp4</code>、<code>ENCOUNTER3.mp4</code>、<code>GARRYMANS.wmv</code></td>
+          </tr>
+          <tr>
+            <td>2024.10.20</td>
+            <td>《INTERLOPER B: We Were Wrong》——Cubemap Examination 方法被证伪，Skyghost 似乎侵入了 Anomidae 的电脑</td>
+          </tr>
+          <tr>
+            <td>2024.12.12</td>
+            <td>《INTERLOPER C: The Sky Crash Incident》——<code>projectskybox</code> 崩溃，用 FLASHLIGHT NUKE 攻击 Skyghost</td>
+          </tr>
+          <tr>
+            <td>2024.12.24</td>
+            <td>社区在 <code>cge7-193</code> 地图阴影中发现秘密消息，指向同名 TF2 服务器</td>
+          </tr>
+          <tr>
+            <td>2024.12.25–2025.01.03</td>
+            <td>社区发现一系列地图、丢失的 Eida 视频，帮助 Anomidae 获取 <strong>SourceBox</strong></td>
+          </tr>
+          <tr>
+            <td>2025.05.19</td>
+            <td><code>cge7-193</code> 开始异常行为，发送用户到未见过的地图</td>
+          </tr>
+          <tr>
+            <td>2025.05.23</td>
+            <td>《INTERLOPER E: Entity Death》——SourceBox 全 3D 虚空图谱，Ordinance 地图访问</td>
+          </tr>
+          <tr>
+            <td>2025.07.24</td>
+            <td><code>ord_end</code> 地图出现，导致 80 天无新 <code>view.vtf</code> 渲染</td>
+          </tr>
+          <tr>
+            <td>2025.10.10</td>
+            <td>Eida Machinima Archivist 被 Eida 家人联系，《Spise Test》第六部被删，宣布停止归档</td>
+          </tr>
+          <tr>
+            <td>2025.10.12</td>
+            <td><code>ord_play</code> 地图被发现并访问，Final Transmission 渲染开始</td>
+          </tr>
+          <tr>
+            <td><strong>2025.10.24</strong></td>
+            <td><strong>《INTERLOPER F: Dreams of a Dead Engine》——最终集</strong>。SourceBox、新型 demo、穿越整个 Source Void 的立方体。Anomidae 在 Point of Interest 对 Skyghost 执行 <strong>FLASHLIGHT NUKE</strong>，彻底切断服务器连接。PROJECT SKYBOX 和 Anomidae 均宣布 <strong>INTERLOPER 调查已结束并被视为失败</strong>。播放 Final Transmission（view #247 起的高清版）</td>
+          </tr>
+          <tr>
+            <td>2025.10.24</td>
+            <td>《Ducks Ducks Ducks》完整版重传</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2 id="section-5">五、SPISE 代码系统：密码学收束</h2>
+
+      <p>SPISE 是 Eida 在 2014 年实验的系统（Spise Test 系列视频），也是 ARG 后期的密码学核心。值得注意的是，Eida 当年的 Spise 系统很可能就是 <strong>SourceBox 的早期版本或平行版本</strong>——两者都用立方体观察虚空，并用相似的伤害触发器激活。</p>
+
+      <h3>解密步骤</h3>
+
+      <h4>第一步：确定密钥</h4>
+
+      <p><code>"11 acts"</code> 作为密钥，对应十六进制的 <code>EDCA?B</code></p>
+
+      <h4>第二步：确定合法代码的数量和长度</h4>
+
+      <p>INTERLOPER B 中的 <code>FOURX6</code> 暗示：</p>
+
+      <ul>
+        <li>合法代码数量 = <strong>4 个</strong></li>
+        <li>每个代码长度 = <strong>6 个字符</strong></li>
+      </ul>
+
+      <h4>第三步：收集代码</h4>
+
+      <p>来自 INTERLOPER E 片尾字幕中无 Discord 用户名的贡献者首字母：</p>
+
+      <blockquote>
+        <p>Immitator, Ulmer, Povvelsk [lucy], 2hat2kills, 99ants, Yyvonnix, Super Gaming Bug</p>
+      </blockquote>
+
+      <p>加上 <code>UP29YS</code> 作为额外代码。</p>
+
+      <h4>第四步：按密钥顺序拼接</h4>
+
+      <p>按密钥 <code>EDCA?B</code> 的顺序，从 E、D、C、A 各集收集代码，每次从每集取一个字符，形成最终代码：</p>
+
+      <pre>UCVlPY Ko2tsn 9ibfYY nKSnmw</pre>
+
+      <p>合并得到最终代码：</p>
+
+      <blockquote>
+        <p><strong><code>UCVlPYKo2tsn9ibfYYnKSnmw</code></strong></p>
+      </blockquote>
+
+      <h4>第五步：指向目标</h4>
+
+      <p>这个代码直接指向一个 YouTube 频道：<strong>SILLY CONE FINDER</strong></p>
+
+      <h2 id="section-6">六、虚空探索的关键发现</h2>
+
+      <h3>6.1 各次远征发现的站点</h3>
+
+      <p>前两次远征所见的站点统称为 <strong>Void Sites（虚空站点）</strong>——是各种未知的地图几何碎片。由于 <code>int_menu</code> 探索的局限，这些地图最初都以<strong>极短视野、无纹理</strong>的状态被看见；直到第二次远征用<strong>针孔相机</strong>收集 VRAD-OR 实体生成的光照信息，才揭示它们<strong>确实有完整的纹理和光照</strong>。</p>
+
+      <h4>第一次远征（Fall Test 等）</h4>
+
+      <table>
+        <thead>
+          <tr>
+            <th>站点</th>
+            <th>发现方式</th>
+            <th>详情</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>2fort Faller</strong></td>
+            <td>从 <code>ctf_2fort</code> 坠落 <strong>6.5 小时</strong></td>
+            <td>第一个被发现的站点（INTERLOPER 7 命名），后在第二次远征中复查光照</td>
+          </tr>
+          <tr>
+            <td><strong>Site 1</strong></td>
+            <td>以 <code>gm_construct</code> 为"发射台"坠落 528 分钟</td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td><strong>Site 2</strong></td>
+            <td>从 <code>gm_construct</code> 坠落 498 分钟</td>
+            <td>与第二次远征中标注为 <strong>Site 6</strong> 的 "Construct Arches" 外形相似，是否为同一站点<strong>未知</strong></td>
+          </tr>
+          <tr>
+            <td><strong>Site 3</strong></td>
+            <td>从 <code>gm_construct</code> 坠落 855 分钟</td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td><strong>Site 4</strong></td>
+            <td>从 <code>gm_construct</code> 坠落 1050 分钟</td>
+            <td>—</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <blockquote>
+        <p>除 2fort Faller 外，其余站点均以 <code>gm_construct</code> 作为起跳点。</p>
+      </blockquote>
+
+      <h4>第二次远征（Void Probes + 数据提取）</h4>
+
+      <p>使用 Void Probes 并从 demo 中提取游戏数据，以有限视野观察站点。重要发现：</p>
+
+      <ul>
+        <li><strong>Box Structure（盒子结构）</strong>：一片平坦平台加一个浮空盒子。盒子内地板上有一个方形小凹槽，浮空字母拼出 <strong>"HᒐEM"</strong>。诡异的是——提取资源时字母似乎漂在墙边，但"亲自"重返现场时，字母却是<strong>平行于地板</strong>悬浮的。Eida 的视频《Mona Doesn't Move Anymore》里出现过一个<strong>外观相似的房间</strong>。</li>
+        <li><strong>追踪 Crasher 轨迹</strong>：沿 Eida 视频中 Crasher 的移动轨迹，找到了 Box Structure 所在的站点。</li>
+        <li><strong>针孔相机采光</strong>：用 VRAD-OR 实体生成的光照信息拼出有限但真实的纹理画面。</li>
+        <li>Anomidae 用 SourceBox 的 spray 交互做的<strong>首次成功测试</strong>：一张纯黑底红色圆圈的图片——SourceBox 把他送进一张看似空荡的地图，里面只有一个带红色棋盘格图案的浮空小球，远处似乎有光，但未被进一步调查。</li>
+      </ul>
+
+      <h4>第三次远征（脚力探索）</h4>
+
+      <p>通过 Skyghost 事件后获得"双脚行走"能力在虚空穿行：</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>地图</th>
+            <th>发现</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>freespace06_v1</strong></td>
+            <td>Garry's Mod 社区地图，包含变色、漫无目的滑动的市民实体，以及 Portal 的 Chell pawn；Umbrella Man 走向 pawn、将其彻底扭曲，导致 Portal 崩溃</td>
+          </tr>
+          <tr>
+            <td><strong>rp_christmastown_2</strong></td>
+            <td>多处浮空实体；用 Skyghost 的撬棍攻击其中一个，它会以<strong>与 FSKY 论坛广告人体模型惊人相似</strong>的姿势跳舞；对同一实体使用 FLASHLIGHT NUKE，其模型扭曲并停止移动</td>
+          </tr>
+          <tr>
+            <td><strong>Belleview Airlines</strong></td>
+            <td>内含一个<strong>巨型 Umbrella Man 类实体</strong>（不具敌意）；浮空附近有 <code>axlvote</code> 地图（Anomidae 年少时玩的 AXLS TF2 社区服务器地图）</td>
+          </tr>
+          <tr>
+            <td><strong>Anomidae 自制地图（无名）</strong></td>
+            <td>他曾在 Columbidae 频道的 SFM 短片《Clarity》和 Anomidae 频道的《Pyrotale》中用过的同一张地图</td>
+          </tr>
+          <tr>
+            <td><strong>森林地图</strong></td>
+            <td>同样曾在《Pyrotale》中使用</td>
+          </tr>
+          <tr>
+            <td><strong>sfm_schoolhouse_rock</strong></td>
+            <td>音乐厅，带舞台和成排座椅，曾在《Clarity》中使用</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p><strong>第三次远征中的关键插曲——"spave"事件</strong>：某刻地图的暗雾变亮，一个以 <strong>T 姿势</strong>站立的 <strong>Human Commando</strong> 模型出现——它来自 TF2 发售前《Invasion》版本，手持 Half-Life 2 早期的重力枪。不清楚它是玩家、实体，还是过去某位玩家的记忆残影。它用重力枪抓起 Anomidae，问他是不是玩家，反复念叨 <strong>"spave"</strong> 数次，最后把他扔出地图边界，明确命令他离开。</p>
+
+      <h4>第四次远征（Ordinance）</h4>
+
+      <p>社区通过 <code>cge7-193</code> 服务器发现的 Ordinance 地图允许控制一个实体穿越虚空，命令结果被"渲染"到 <code>view.vtf</code>。这也是最终向 Skyghost 发起 FLASHLIGHT NUKE 总攻的舞台。</p>
+
+      <h3>6.2 Point of Interest</h3>
+
+      <ul>
+        <li>基于 <code>d2_coast_07</code>（与 Type 5 demo <code>spookycoast</code> 同张地图）</li>
+        <li>包含<strong>巨型道具漩涡</strong>、多个 DMNPC、一个<strong>制造 Void Probe 的大型实体</strong></li>
+        <li>这些探针被源源不断送出，在虚空中<strong>寻找并最终摧毁</strong> Anomidae 的记忆站点</li>
+        <li>Skyghost 在 INTERLOPER C 之后<strong>驻扎于此</strong></li>
+        <li><strong>最终被 Anomidae 用 FLASHLIGHT NUKE 多次攻击彻底摧毁</strong>，Point of Interest 内的一切（包括 Skyghost）灰飞烟灭</li>
+      </ul>
+
+      <h3>6.3 虚空底部</h3>
+
+      <p>这是虚空中<strong>已知最低点</strong>：</p>
+
+      <ul>
+        <li>一片广阔无垠的<strong>棋盘格地板</strong>（与 <code>int_menu</code> 同款纹理），Anomidae 在 INTERLOPER C 中走了<strong>数小时</strong>仍未触及任何边缘</li>
+        <li>背景播放 <strong><code>citadel_drone_loop2.wav</code></strong>（出自 Half-Life 2）</li>
+        <li><strong>发光门道</strong>：类似 Portal RTX 客户端中见过的那种。它最初呈现为<strong>女性上半身</strong>的形态（与 Eida Spise Tests 中某个形象相似），头顶巨大灰色圆锥体，周围环绕多个纹理缺失的球体。用 Skyghost/撬棍"使用"它后，它才变成门道形状</li>
+        <li>Anomidae 走过门道 → <code>projectskybox.exe</code> 崩溃 → 生成 <strong>Kulcs</strong> 地图</li>
+        <li><strong>坠落道具现象</strong>：SourceBox 直播中，tracker 程序里能看到若干<strong>灰色球体带 X/Y/Z 指示器</strong>的实体，其中一些<strong>持续向下坠落</strong>——很可能就是正在落向底部途中的道具</li>
+        <li>Anomidae 的 <strong>Xbox 模拟器客户端</strong>也曾卡在一张类似的空间里：棋盘格地板、门道，外加一个带钥匙孔的盒子</li>
+      </ul>
+
+      <p><strong>与 Subroutine_Hello 的区别</strong>：社区调查 <code>cge7-193</code> 服务器时找到一张叫 <strong><code>Subroutine_Hello</code></strong> 的地图，地板、门道、钥匙都和上述空间高度相似，<strong>明显互有关联</strong>；但它<strong>并非虚空最底部</strong>——地图上有一道<strong>可以坠落下去的巨大缺口</strong>，说明它处于另一层位置。</p>
+
+      <h3>6.4 记忆（Memories）：虚空如何存储与访问</h3>
+
+      <p>虚空以未知方式<strong>录制并存储</strong>玩家在各种 Source 引擎游戏中的事件，这些事件被称为<strong>记忆（memories）</strong>。访问记忆有两条路径：</p>
+
+      <ul>
+        <li><strong>脚力偶遇</strong>：在第三次远征中步行探索时直接撞见（目前仅确认一例）</li>
+        <li><strong>Type 7 demo + spray 交互 + 立方体入水</strong>（主要方式）</li>
+      </ul>
+
+      <p><strong>精确触发链：</strong></p>
+
+      <ol>
+        <li>Type 7 demo 通常会<strong>反复播放铃声</strong>——它是判别器（discriminator）</li>
+        <li>当立方体被<strong>放入水中</strong>时，若在 Source 引擎游戏中放置了一张<strong>与某条已有记忆足够接近的 spray</strong>，原本的铃声会被<strong>三段连续音效</strong>取代</li>
+        <li>这三段音效就是对应记忆的<strong>访问密码</strong></li>
+        <li>把立方体放在 Ordinance 地图的 <strong>A 按钮</strong>上，在控制台<strong>回放这三段音效</strong>，Type 7 demo 就会把玩家传送到对应的记忆</li>
+      </ol>
+
+      <p>虚空存储的具体记忆：</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>记忆</th>
+            <th>详情</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>axlvote</strong></td>
+            <td>Anomidae 年轻的 Scout 自己在地图上跳，甚至能与现在的他对话，问他有没有麦克风、骂他"烦人的老东西"——这不只是录像，年轻自我有真实反应</td>
+          </tr>
+          <tr>
+            <td><strong>Unknown Castle Map</strong></td>
+            <td>Anomidae 为朋友创建的城堡地图；2014 年 Eida 做 Spise 实验时<strong>也找到了这张地图</strong>。第二次访问时已被 Void Probe 实体攻击。该地图与歌曲《Breeze》的视频画面相似，Anomidae 二访时播放的正是《Breeze》的改编版，INTERLOPER F 结尾独白中也用了另一版改编</td>
+          </tr>
+          <tr>
+            <td><strong>Flatgrass Pit</strong></td>
+            <td>《The Gmod Idiot Box》第一集中 Dr. Hax 场景的精确复现；Anomidae 坠入坑中死亡时，揭示玩家角色模型竟是 <strong>Alyx</strong></td>
+          </tr>
+          <tr>
+            <td><strong>phys_house</strong></td>
+            <td>Anomidae 旧电脑运行困难的地图；在房子后面发现一个他似乎认识的 ragdoll，语气明显转变，片段随即突兀结束</td>
+          </tr>
+          <tr>
+            <td><strong>rp_hometown</strong></td>
+            <td>Anomidae 担任服务器管理员时的记忆；ragdoll 和道具"几乎"和他记忆中一模一样，他还吐槽了那个总爱囤枪的"烦人玩家"</td>
+          </tr>
+          <tr>
+            <td><strong>d1_trainstation_03</strong></td>
+            <td>来自 <code>damage</code> 文件夹的视频：一个市民 ragdoll 在地上挣扎，手电筒音效循环播放，多个 Void Probe 一外一内穿墙逼近</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p><strong><code>damage</code> 文件夹</strong>：Anomidae 最终发给 PROJECT SKYBOX 团队的一个文件夹，内含<strong>四张图片和一段视频</strong>，每张图片都展示了某条记忆<strong>被 Void Probe 实体攻击后的残骸</strong>——是虚空正在系统性抹除他过往的直接证据。</p>
+
+      <h3>6.5 Final Transmission（最终传输）</h3>
+
+      <p>INTERLOPER F 结尾，Skyghost 被摧毁后放出的<strong>最后信号</strong>：</p>
+
+      <ol>
+        <li>一个使用 <strong>2005 年 FSKY 广告中人体模型</strong>的实体在虚空中坠落</li>
+        <li>数段 <strong>Type 5 风格的 demo 视频</strong>叠加其上</li>
+        <li>该实体最终落在一张<strong>未知地图</strong>上——一片广阔空间，<strong>反射质感的地面，远处有山丘</strong></li>
+        <li>该地图位置<strong>只知在 <code>d1_town_01</code> 正下方</strong>，具体归属不明</li>
+        <li>人体模型<strong>穿透地板坠落</strong>的瞬间，一个<strong>灰色圆锥体</strong>出现并浮向天空</li>
+        <li>一只 <strong>Utah Teapot（犹他茶壶）</strong> 出现在天空，似乎将圆锥体击落回地面</li>
+      </ol>
+
+      <p>这段传输留下的核心疑问：那张反射地板地图究竟在何处？它与 FSKY 广告中的人体模型、以及与 <code>d1_town_01</code> 涂鸦的关联是什么？——至今无解。</p>
+
+      <h2 id="section-7">七、现状与核心未解谜团</h2>
+
+      <p>根据 INTERLOPER F 的结尾，PROJECT SKYBOX 和 Anomidae 都宣称 <strong>INTERLOPER 调查已结束并被视为失败</strong>。但通过 FLASHLIGHT NUKE 攻击 Skyghost 并切断服务器连接后，<strong>Skyghost 的最终传输（Final Transmission）</strong> 显示了一个使用 2005 FSKY 广告中人体模型的实体坠入虚空，最终落在一张反射地板、远处有山丘的未知地图上——而那只 <strong>Utah Teapot</strong> 的出现，更像是某种更高层级的"系统"在对入侵者做出回应。</p>
+
+      <h3>仍未解答的核心问题</h3>
+
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>未解之谜</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td><strong>FSKY 究竟是什么？</strong> 只是服务器托管商，还是某个更大系统的前端？</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td><strong>INTERLOPER 实体的真实身份？</strong> 它是 AI、被捕获的玩家意识、还是某种记录机制本身？它为何会在被"拉取 demo"时停止移动？</td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td><strong>Eida (jstal1994) 的真实身份？</strong> 他在 2024 年的回归留下了 GRIS.mp4、ENCOUNTER3.mp4、garrymans.wmv，但没有解释下一步该做什么。他那套绕过涂鸦的私有方法（含已失效的 IP）至今失传</td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td><strong>SILLY CONE FINDER 频道</strong>是什么？SPISE 代码指向这里的目的是什么？</td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td><strong>"spave" 一词的含义？</strong> INTERLOPER C 中，那个 Pre-release TF2 的 Human Commando（持早期重力枪、T 姿势）反复念叨这个词，逼 Anomidae 离开——它究竟是谁，在替谁守门？</td>
+          </tr>
+          <tr>
+            <td>6</td>
+            <td><strong>Angel 实体的真实立场</strong>：它引导 Anomidae 看到 Axlvote，但它究竟是什么？</td>
+          </tr>
+          <tr>
+            <td>7</td>
+            <td><strong>DM Editor 与 FSKY 的关系</strong>：DM Editor 工具的存在性存疑（Anomidae 认为是骗局），但 DMNPC 的命名规范暗示了关联</td>
+          </tr>
+          <tr>
+            <td>8</td>
+            <td><strong>Final Transmission 中的未知地图</strong>：反射地板、远处山丘、位于 <code>d1_town_01</code> 正下方——它位于何处？灰色圆锥体、Utah Teapot 与 FSKY 广告人体模型之间是什么关系？</td>
+          </tr>
+          <tr>
+            <td>9</td>
+            <td><strong>Subroutine_Hello 与虚空底部的关系</strong>：它明显与底部空间相连，却有一道可坠落的缺口，说明它处在另一层——虚空是否还有更深的层级？</td>
+          </tr>
+          <tr>
+            <td>10</td>
+            <td><strong><code>damage</code> 文件夹的源头</strong>：是谁/什么在系统性地用 Void Probe 抹除 Anomidae 的记忆？是 FSKY、INTERLOPER，还是某个更主动的"清理者"？</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>附录：资料来源</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>资料</th>
+            <th>URL</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Entities 实体图鉴</td>
+            <td><a href="https://interloper.miraheze.org/wiki/Entities" target="_blank" rel="noopener">https://interloper.miraheze.org/wiki/Entities</a></td>
+          </tr>
+          <tr>
+            <td>FSKY 组织</td>
+            <td><a href="https://interloper.miraheze.org/wiki/FSKY" target="_blank" rel="noopener">https://interloper.miraheze.org/wiki/FSKY</a></td>
+          </tr>
+          <tr>
+            <td>Timeline of Events 时间线</td>
+            <td><a href="https://interloper.miraheze.org/wiki/Timeline_of_Events" target="_blank" rel="noopener">https://interloper.miraheze.org/wiki/Timeline_of_Events</a></td>
+          </tr>
+          <tr>
+            <td>Void 虚空</td>
+            <td><a href="https://interloper.miraheze.org/wiki/Void" target="_blank" rel="noopener">https://interloper.miraheze.org/wiki/Void</a></td>
+          </tr>
+          <tr>
+            <td>SPISE Codes 密码系统</td>
+            <td><a href="https://interloper.miraheze.org/wiki/SPISE_Codes" target="_blank" rel="noopener">https://interloper.miraheze.org/wiki/SPISE_Codes</a></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <blockquote>
+        <p>💡 <strong>这个 ARG 的独特之处</strong>：它把 ARG 的"解谜"行为本身融入了叙事——玩家（社区）通过逆向工程 Source 引擎、破解 demo 文件、拼接 SPISE 代码来推进故事，而故事本身讲述的正是"FSKY 通过 Source 引擎通信"这一行为。<strong>解谜的动作与解谜的对象是同一个东西。</strong></p>
+      </blockquote>
+
+    </div>
+
+    <a class="back-link" href="/">← 返回首页</a>
+  </article>
+</main>
+
+<footer class="container">
+  &copy; 2026 WafiLog
+</footer>
+
+</body>
+</html>
