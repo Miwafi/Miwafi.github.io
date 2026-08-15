@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>起源引擎的怪异感从何而来 — WafiLog</title>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background-color: #fff;
+    background-image: url("/resources/images/HL2.png");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    color: #111;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.6;
+  }
+  header, main, footer {
+    background-color: rgba(255, 255, 255, 0.92);
+  }
+  footer {
+    border-top: 1px solid #f5f5f5;
+  }
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+  header {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 48px 24px 0;
+    text-align: center;
+  }
+  .site-title {
+    display: inline-block;
+    background: #111;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    padding: 10px 28px;
+    text-decoration: none;
+    transition: opacity .2s;
+  }
+  .site-title:hover { opacity: .8; }
+  nav {
+    margin-top: 24px;
+    display: flex;
+    justify-content: center;
+    gap: 2px;
+    font-size: 14px;
+  }
+  nav a {
+    color: #888;
+    text-decoration: none;
+    padding: 6px 16px;
+    transition: color .2s;
+  }
+  nav a:hover { color: #111; }
+
+  /* Article */
+  article {
+    padding: 48px 0 64px;
+  }
+  .article-header {
+    margin-bottom: 40px;
+  }
+  .article-title {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.35;
+    letter-spacing: .5px;
+  }
+  .article-subtitle {
+    font-size: 16px;
+    color: #666;
+    margin-top: 8px;
+    font-weight: 400;
+  }
+  .article-meta {
+    font-size: 13px;
+    color: #bbb;
+    margin-top: 14px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 12px;
+  }
+  .article-content {
+    font-size: 16px;
+    color: #333;
+    line-height: 1.85;
+  }
+  .article-content h2 {
+    font-size: 21px;
+    font-weight: 700;
+    color: #111;
+    margin: 42px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #eee;
+  }
+  .article-content h3 {
+    font-size: 17px;
+    font-weight: 700;
+    color: #111;
+    margin: 32px 0 12px;
+  }
+  .article-content p {
+    margin-bottom: 16px;
+  }
+  .article-content ul, .article-content ol {
+    margin: 0 0 16px 20px;
+  }
+  .article-content li {
+    margin-bottom: 8px;
+  }
+  .article-content blockquote {
+    margin: 20px 0;
+    padding: 16px 20px;
+    background: #f9f9f9;
+    border-left: 3px solid #ddd;
+    color: #555;
+    font-style: normal;
+  }
+  .article-content blockquote p {
+    margin-bottom: 0;
+  }
+  .article-content strong {
+    color: #111;
+    font-weight: 700;
+  }
+  .article-content em {
+    color: #666;
+  }
+  .article-content code {
+    font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+    font-size: 14px;
+    background: #f5f5f5;
+    padding: 2px 6px;
+    color: #111;
+  }
+  .article-content pre {
+    background: #f5f5f5;
+    padding: 16px;
+    overflow-x: auto;
+    margin: 16px 0;
+    font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .article-content a {
+    color: #111;
+    text-decoration: underline;
+  }
+  .article-content a:hover {
+    color: #666;
+  }
+  .toc {
+    background: #f9f9f9;
+    padding: 16px 20px;
+    margin: 24px 0;
+    border-left: 3px solid #ddd;
+  }
+  .toc-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #111;
+    margin-bottom: 12px;
+  }
+  .toc ul {
+    margin: 0;
+    padding-left: 20px;
+  }
+  .toc li {
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+  .toc a {
+    color: #555;
+    text-decoration: none;
+  }
+  .toc a:hover {
+    color: #111;
+    text-decoration: underline;
+  }
+  .back-link {
+    display: inline-block;
+    margin-top: 48px;
+    font-size: 14px;
+    color: #888;
+    text-decoration: none;
+    transition: color .2s;
+  }
+  .back-link:hover { color: #111; }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    padding: 32px 0 64px;
+    font-size: 12px;
+    color: #ccc;
+    border-top: 1px solid #f5f5f5;
+  }
+
+  @media (max-width: 520px) {
+    header { padding-top: 32px; }
+    .container { padding: 0 16px; }
+    .article-title { font-size: 22px; }
+    .article-content { font-size: 15px; }
+    .article-content h2 { font-size: 18px; }
+    article { padding: 32px 0 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a href="/" class="site-title">WAFILOG</a>
+  <nav>
+    <a href="/">首页</a>
+    <a href="/archives/">归档</a>
+    <a href="/friends/">友链</a>
+  </nav>
+</header>
+<main class="container">
+  <article>
+    <div class="article-header">
+      <h1 class="article-title">起源引擎的怪异感从何而来</h1>
+      <div class="article-subtitle">引擎的不完美，如何变成了恐怖感的源头</div>
+      <div class="article-meta">
+        <span>2026-08-16</span>
+        <span>·</span>
+        <span>WafiWHY</span>
+      </div>
+    </div>
+
+    <div class="article-content">
+
+      <blockquote>
+        <p>任何在 Source 引擎游戏里待过足够久的人，都迟早会撞上那种感觉：某个瞬间，世界突然<strong>不对劲</strong>了。NPC 的脖子转到了一个不该转的角度，门自己开了一条缝，一张贴图在角落里微微抽搐。你很难说清它到底是什么，但你就是知道——<strong>有什么东西错了</strong>。</p>
+      </blockquote>
+
+      <div class="toc">
+        <div class="toc-title">目录</div>
+        <ul>
+          <li><a href="#section-1">一、什么是"怪异感"</a></li>
+          <li><a href="#section-2">二、物理引擎的"活物"幻觉</a></li>
+          <li><a href="#section-3">三、光照烘焙出来的"假永恒"</a></li>
+          <li><a href="#section-4">四、NPC 与"拟人未满"的恐怖谷</a></li>
+          <li><a href="#section-5">五、地图边界的"透明墙"</a></li>
+          <li><a href="#section-6">六、声音与寂静的错位</a></li>
+          <li><a href="#section-7">七、局限本身成了语言</a></li>
+        </ul>
+      </div>
+
+      <h2 id="section-1">一、什么是"怪异感"</h2>
+
+      <p>先给这个感觉起个名字。它不同于恐怖游戏里被刻意设计出来的惊吓——那种有节奏、有预期的恐惧。它更像是你在一个本该熟悉的环境里，突然察觉到<strong>熟悉本身是假的</strong>。用英文来说，最贴切的词大概是 <em>uncanny</em>——"怪诞、离奇、令人不安的似曾相识"。</p>
+
+      <p>而 Source 引擎，几乎是 <em>uncanny</em> 这个词最忠实的工业实现。为什么？因为它诞生于一个特殊的历史节点：它既足够先进，能让世界看起来<strong>逼真到值得信任</strong>；又足够粗糙，会在逼真的表面之下<strong>不断泄露自己的机械本质</strong>。正是这种"像，又不完全像"的临界状态，制造了挥之不去的怪异感。</p>
+
+      <blockquote>
+        <p>恐怖谷理论说的是人形机器人：越像人，越让人不安。而 Source 引擎做的事，是把整个<strong>世界</strong>推进了恐怖谷。</p>
+      </blockquote>
+
+      <h2 id="section-2">二、物理引擎的"活物"幻觉</h2>
+
+      <p>Source 最著名的招牌之一，是它的 <strong>Havok 物理引擎</strong>。2004 年《半条命 2》里那个能吸、能抛、能砸人的重力枪，让无数玩家第一次意识到：<strong>这个世界的物体会自己动</strong>。</p>
+
+      <p>但"物体会自己动"这件事，本身就埋着不安的种子。</p>
+
+      <ul>
+        <li><strong>尸体与布娃娃</strong>：敌人被击杀后，不再是播放一段预设的倒地动画，而是化为一具由关节和刚体驱动的"布娃娃"。它倒地的方式取决于你击中了哪、用多大力、旁边有什么东西。结果是——每一具尸体的死法都<strong>独一无二</strong>，而其中总有一些，会摆出<strong>活人摆不出的姿势</strong>。</li>
+        <li><strong>卡在墙里的腿</strong>：物理模拟并不总是干净利落。一条腿穿进地板，一只胳膊卡进箱子，尸体在墙角<strong>以每秒几十次的速度微微震颤</strong>。它不是死了，它只是<strong>被算错了</strong>。</li>
+        <li><strong>物体的"抽搐"</strong>：一个水瓶被你扔出去，卡在两个碰撞体之间，然后开始<strong>高频抖动</strong>，发出持续的碰撞音效。它看起来像一个想要挣脱什么的东西。</li>
+      </ul>
+
+      <p>关键就在这里：<strong>机械故障被人类的大脑读成了生命迹象</strong>。我们本能地会把"自主运动"和"有生命"画等号。于是当一具尸体在墙角抽搐，你的第一反应不是"物理引擎又出 bug 了"，而是"<em>它是不是还没死透？</em>"——哪怕你明知那只是一个计算误差。</p>
+
+      <p>这种"明知是假的，却不由自主当真"的错位，正是 Source 怪异感的核心配方。</p>
+
+      <h2 id="section-3">三、光照烘焙出来的"假永恒"</h2>
+
+      <p>Source 的光照，是编译期"<strong>烘焙</strong>"进去的。那个叫 <code>VRAD</code> 的命令行工具，在玩家进入地图之前，就把光线如何弹射、影子落在哪里，全部预先算好、烧进贴图。换句话说，<strong>你看到的光和影，在你来之前就已经死了</strong>。</p>
+
+      <p>这带来一种极其微妙的违和：</p>
+
+      <ul>
+        <li><strong>影子不会随着你的手电筒移动</strong>：你照向一面墙，墙上的影子纹丝不动，因为它们不来自你的光源，而来自某个"编译时刻"的太阳。</li>
+        <li><strong>光永远"恰到好处"</strong>：真实世界的光是活的、会呼吸的。而烘焙的光是标本，是琥珀里凝固的一瞬间。</li>
+        <li><strong>本该有光的地方没有，不该有的地方却有</strong>：漏光、光斑、接缝处的明暗断层——这些"错误"在玩家眼里，会变成"<em>这里为什么这么亮？这里是不是有什么东西？</em>"</li>
+      </ul>
+
+      <p>于是你会对着一堵其实空无一物的墙，本能地压低身子、放慢脚步。因为那团莫名其妙的亮斑，在你的直觉里<strong>必须有一个来源</strong>——而一个没有来源的光，只能是某种"不干净的东西"。</p>
+
+      <blockquote>
+        <p>烘焙光照最诡异的地方在于：它让一个完全静止的场景，看起来像是<strong>时间被暂停了</strong>。你不是走进了一间屋子，你是走进了一张<strong>被拍下来的照片</strong>。</p>
+      </blockquote>
+
+      <h2 id="section-4">四、NPC 与"拟人未满"的恐怖谷</h2>
+
+      <p>如果说物理和光照制造的是环境层面的怪异，那么 <strong>NPC</strong> 就把怪异感拉到了人物层面。</p>
+
+      <p>Source 引擎的人物，由几个关键部件拼装而成：一张用顶点动画驱动的<strong>面部</strong>（当时的"表情系统"曾是业界标杆）、一套<strong>动画状态机</strong>、以及负责嘴巴与语音同步的 <strong>phoneme 系统</strong>。这套东西在当年很先进，但以今天的标准看，处处都是裂缝。</p>
+
+      <ul>
+        <li><strong>死盯不放的视线</strong>：很多 Source NPC 一旦触发对话，眼睛就会<strong>锁定你</strong>，无论你怎么绕、怎么退，瞳孔始终钉在你身上。真实的人不会这样。这种"锁定"让人想起猎物被盯上的感觉。</li>
+        <li><strong>嘴和声音的轻微错位</strong>：语音已经念到第三个字，嘴唇却还停在前一个元音的形状上。这种毫秒级的延迟，大脑能捕捉到，却说不清哪里不对——于是你只觉得"这个人说话怪怪的"。</li>
+        <li><strong>动画循环的断裂</strong>：一段"站立"动画结束后到下一段开始前的那个<strong>空档</strong>，人物会瞬间复位、又瞬间进入新姿势。就像一帧一帧被硬切，而不是"活"着。</li>
+        <li><strong>被卡住的导航</strong>：NPC 朝你走来，撞上一张桌子，然后开始原地踏步、反复调整方向。你会看到它<strong>徒劳地、机械地、执着地</strong>重复同一套动作。</li>
+      </ul>
+
+      <p>最经典的例子，莫过于《半条命 2》里的 <strong>G-Man</strong>。Valve 几乎是<strong>故意</strong>把所有的不完美都堆到了这个角色身上：他说话时诡异的停顿与重音、不自然的眨眼频率、仿佛能看穿屏幕的直视、以及每次出现都像被"插入"又"抽出"世界的方式。G-Man 之所以可怕，恰恰因为他<strong>踩在拟人的临界点上</strong>——他看起来是个人，但所有细节都在告诉你，<strong>他不是</strong>。</p>
+
+      <p>某种意义上，G-Man 是 Source 引擎对自己的<strong>一次自我觉察</strong>：它太清楚自己造出来的"人"有多假，于是干脆把这个"假"推到了极致，变成了一个角色。</p>
+
+      <h2 id="section-5">五、地图边界的"透明墙"</h2>
+
+      <p>每个游戏都有边界，但 Source 的边界格外令人不安，因为它太<strong>像"真实"的墙</strong>了。</p>
+
+      <p>早期引擎的边界，通常是一片悬崖、一道高墙、或者干脆是<strong>虚无</strong>——掉下去就死了，没什么好多想。但 Source 的世界往往用<strong>天空盒</strong>来伪造远方：远处的城市、天际线、山峦，全是一张贴在巨大立方体内壁上的贴图。</p>
+
+      <p>于是你看到一条路、一片原野、一个城镇的剪影，你走过去——<strong>撞上了一面看不见的墙</strong>。路还在延伸，天还很亮，远处的楼还在，但你就是<strong>过不去</strong>。这种"世界明明还在继续，却不许你再往前走"的感觉，是一种极其特殊的焦虑。</p>
+
+      <ul>
+        <li><strong>你以为的自由是假的</strong>：那一刻你才意识到，自己一直待在一个巨大的盒子里。</li>
+        <li><strong>边界之外还有"边界"</strong>：你甚至能透过天空盒，隐约感觉到盒子之外还有别的什么——但那是你永远无法触及的地方。</li>
+        <li><strong>地图的接缝</strong>：有些自制地图，你会在某个角度看到<strong>天空盒的棱角</strong>、或者地板之外露出的、绝对漆黑的<strong>虚空</strong>（Void）。</li>
+      </ul>
+
+      <p>虚空（Void）是 Source 里最著名的"非空间"。它是地图坐标之外那一片<strong>纯黑、无光、无物理</strong>的区域。掉进虚空，你会无限下坠，或者瞬间崩溃。它既不是"死"，也不是"活"——它是这个被渲染出来的世界的<strong>反面</strong>，是代码停止运行的地方。</p>
+
+      <blockquote>
+        <p>一个世界如果有边界，你就总能想象边界之外的东西。而 Source 的问题在于：它<strong>真的</strong>在边界之外留了一个"外面"，并且那个外面，是一片<strong>什么都没有的黑色</strong>。</p>
+      </blockquote>
+
+      <h2 id="section-6">六、声音与寂静的错位</h2>
+
+      <p>怪异感不只来自视觉。Source 的声音系统同样在偷偷"出卖"引擎的机械性。</p>
+
+      <ul>
+        <li><strong>贴图般循环的环境音</strong>：风声、机器嗡鸣、远处的枪响，很多是<strong>定点循环播放</strong>的。它们与玩家的位置、动作没有真实的物理关系，于是你会遇到"<em>明明走到声源跟前，声音却没有变大</em>"的诡异时刻。</li>
+        <li><strong>突然中断的语音</strong>：一段 NPC 语音可能因为脚本切换而被<strong>硬生生切断</strong>，一句话讲到一半，世界归于寂静，那个人却还站在原地，好像刚才什么都没说。</li>
+        <li><strong>只有你在的寂静</strong>：清空敌人之后的地图，有时会进入一种<strong>彻底的、近乎耳鸣的安静</strong>。你不确定这种安静是"安全"，还是"下一场战斗之前的呼吸"。</li>
+        <li><strong>房间里的回声模型</strong>：Source 的 <code>DSP</code> 混响会根据空间大小给声音加回声。但当一个<strong>不该有回声的地方</strong>出现了回声（比如一片本应开阔的空地），你的耳朵会先于理智发出警报。</li>
+      </ul>
+
+      <p>声音是最诚实的。画面可以骗过你，但一个<strong>来源不明、衰减异常、凭空消失</strong>的声音，会直接绕过你的理性，戳进你的后颈。</p>
+
+      <h2 id="section-7">七、局限本身成了语言</h2>
+
+      <p>所以，回到最开始的问题：起源引擎的怪异感，到底从何而来？</p>
+
+      <p>我的答案是：<strong>它来自"接近逼真"与"无法逼真"之间的那道裂缝</strong>。Source 不是不够好——恰恰相反，它在 2004 年已经好到足以让玩家<strong>投入信任</strong>。而信任一旦建立，每一个技术局限，就不再是"缺陷"，而变成了一种<strong>暴露</strong>：</p>
+
+      <ul>
+        <li>布娃娃的抽搐，暴露了"这是一个刚体系统"；</li>
+        <li>烘焙的光影，暴露了"这个世界早已被计算完毕"；</li>
+        <li>NPC 死锁的视线，暴露了"它只是在执行脚本"；</li>
+        <li>透明墙和虚空，暴露了"这只是一个盒子"。</li>
+      </ul>
+
+      <p>而真正的诡异之处在于：<strong>暴露出来的这些"机械性"，反而被玩家的大脑重新解读成了"灵异"</strong>。抽搐的尸体被当成"诈尸"，来源不明的光被当成"脏东西"，死盯不放的眼神被当成"它知道我在看着它"。我们不是在害怕引擎的 bug，我们是在害怕<strong>自己投射进 bug 里的那个解释</strong>。</p>
+
+      <blockquote>
+        <p>这也许就是为什么，关于 Source 引擎的恐怖都市传说——从 <em>Hunt Down the Freeman</em> 的鬼脸，到 INTERLOPER、到那些"地图里藏着不该存在的东西"的传闻——会如此绵延不绝。因为人们隐约感觉到：<strong>这个引擎的深处，真的有什么在动</strong>。而那个东西，不是鬼魂。</p>
+        <p>那个东西，是<strong>我们自己的想象</strong>，在每一个像素的裂缝里，找到了栖身之所。</p>
+      </blockquote>
+
+      <p>所以下次你再走进一张 Source 地图，感到后颈发凉的时候，不妨停下来想一想：让你害怕的，到底是那具抽搐的尸体，还是你脑子里那个<strong>"它下一秒会自己站起来"</strong>的念头？</p>
+
+      <p>答案，也许就是起源引擎怪异感的全部真相。</p>
+
+    </div>
+
+    <a class="back-link" href="/">← 返回首页</a>
+  </article>
+</main>
+
+<footer class="container">
+  &copy; 2026 WafiLog
+</footer>
+
+</body>
+</html>
