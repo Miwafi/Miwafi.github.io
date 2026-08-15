@@ -288,7 +288,17 @@
   <div class="page-subtitle">朋友们</div>
 
   <div class="friend-grid" id="friendGrid">
-    <!-- friend cards rendered by JS -->
+    <div class="friend-card">
+      <div class="friend-card-top">
+        <img class="friend-avatar" src="https://blog.huanment.top/images/avatar.avif" alt="穗积的宇宙船" loading="lazy">
+        <div class="friend-name">穗积的宇宙船</div>
+      </div>
+      <div class="friend-description">莫笑吾辈好远骛，跬步平川马蹄疾。</div>
+      <a class="friend-link" href="https://blog.huanment.top" target="_blank" rel="noopener">
+        blog.huanment.top
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17l9.2-9.2M17 17V7H7"/></svg>
+      </a>
+    </div>
   </div>
 
   <div class="apply-section">
@@ -343,23 +353,27 @@
 
   const grid = document.getElementById('friendGrid');
 
-  friends.forEach(function(f) {
-    const card = document.createElement('div');
-    card.className = 'friend-card';
+  // 仅当网格为空（如禁用 JS 的静态降级未生效）时才动态渲染，
+  // 避免与页面中已静态生成的内容重复。
+  if (grid.children.length === 0) {
+    friends.forEach(function(f) {
+      const card = document.createElement('div');
+      card.className = 'friend-card';
 
-    card.innerHTML =
-      '<div class="friend-card-top">' +
-        '<img class="friend-avatar" src="' + f.avatar + '" alt="' + f.name + '" loading="lazy">' +
-        '<div class="friend-name">' + f.name + '</div>' +
-      '</div>' +
-      '<div class="friend-description">' + f.description + '</div>' +
-      '<a class="friend-link" href="' + f.link + '" target="_blank" rel="noopener">' +
-        f.link.replace(/^https?:\/\//, '') +
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17l9.2-9.2M17 17V7H7"/></svg>' +
-      '</a>';
+      card.innerHTML =
+        '<div class="friend-card-top">' +
+          '<img class="friend-avatar" src="' + f.avatar + '" alt="' + f.name + '" loading="lazy">' +
+          '<div class="friend-name">' + f.name + '</div>' +
+        '</div>' +
+        '<div class="friend-description">' + f.description + '</div>' +
+        '<a class="friend-link" href="' + f.link + '" target="_blank" rel="noopener">' +
+          f.link.replace(/^https?:\/\//, '') +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17l9.2-9.2M17 17V7H7"/></svg>' +
+        '</a>';
 
-    grid.appendChild(card);
-  });
+      grid.appendChild(card);
+    });
+  }
 </script>
 
 <script>
