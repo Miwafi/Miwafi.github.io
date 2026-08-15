@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forcedra_ — WafiLog</title>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background-color: #fff;
+    background-image: url("/resources/images/Forcedra_.png");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    color: #111;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.6;
+  }
+  header, main, footer {
+    background-color: rgba(255, 255, 255, 0.94);
+  }
+  .container {
+    padding: 0 24px;
+  }
+  header {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 48px 24px 0;
+    text-align: center;
+  }
+  .site-title {
+    display: inline-block;
+    background: #111;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    padding: 10px 28px;
+    text-decoration: none;
+    transition: opacity .2s;
+  }
+  .site-title:hover { opacity: .8; }
+  nav {
+    margin-top: 24px;
+    display: flex;
+    justify-content: center;
+    gap: 2px;
+    font-size: 14px;
+  }
+  nav a {
+    color: #888;
+    text-decoration: none;
+    padding: 6px 16px;
+    transition: color .2s;
+  }
+  nav a:hover { color: #111; }
+  nav a.active { color: #111; font-weight: 600; }
+
+  main {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 56px 0 80px;
+  }
+
+  .article-header {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+  .article-title {
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1.25;
+    margin-bottom: 12px;
+    letter-spacing: -.5px;
+  }
+  .article-meta {
+    font-size: 14px;
+    color: #999;
+  }
+  .article-tag {
+    display: inline-block;
+    font-size: 12px;
+    color: #666;
+    border: 1px solid #e0e0e0;
+    padding: 2px 10px;
+    margin-right: 6px;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+  }
+
+  .article-content {
+    font-size: 16px;
+    color: #333;
+  }
+  .article-content p {
+    margin-bottom: 20px;
+  }
+  .article-content a {
+    color: #111;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .article-content a:hover { opacity: .7; }
+
+  .team-logo {
+    display: block;
+    width: 100%;
+    max-width: 360px;
+    margin: 0 auto 40px;
+    border: 1px solid #eee;
+  }
+
+  .section-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #bbb;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin: 40px 0 16px;
+  }
+
+  .duty-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 8px;
+  }
+  .duty-card {
+    border: 1px solid #eee;
+    padding: 24px;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .duty-card:hover {
+    border-color: #ddd;
+    box-shadow: 0 2px 12px rgba(0,0,0,.04);
+  }
+  .duty-card h3 {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: #111;
+  }
+  .duty-card p {
+    font-size: 14px;
+    color: #666;
+    margin: 0;
+  }
+
+  .contact-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .contact-list li {
+    padding: 10px 0;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 14px;
+    color: #555;
+  }
+  .contact-list li:last-child { border-bottom: none; }
+  .contact-list a { color: #111; }
+
+  footer {
+    border-top: 1px solid #f5f5f5;
+    padding: 40px 24px;
+    text-align: center;
+    color: #bbb;
+    font-size: 13px;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  footer a { color: #bbb; text-decoration: none; }
+  footer a:hover { color: #111; }
+
+  @media (max-width: 560px) {
+    .duty-grid { grid-template-columns: 1fr; }
+    .article-title { font-size: 26px; }
+  }
+</style>
+</head>
+<body>
+  <header>
+    <a href="/" class="site-title">Forcedra_LOG</a>
+    <nav>
+      <a href="/">首页</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="container">
+      <article>
+        <div class="article-header">
+          <h1 class="article-title">Forcedra_</h1>
+          <div class="article-meta">
+            <span>欢迎</span>
+          </div>
+        </div>
+
+        <div class="article-content">
+          <img src="/resources/images/Forcedra2_.png" alt="Forcedra_" class="team-logo">
+
+          <p>Forcedra_ 是一支专注于<strong>小众游戏开发</strong>与<strong>失传媒体调查</strong>的团队。我们相信被主流叙事忽略的角落里，藏着最值得被讲述的故事。</p>
+
+          <p>我们在旧磁带的噪点里寻找旋律，在损坏的磁盘扇区中重建规则。</p>
+
+          <h2 class="section-title">What We Do</h2>
+          <div class="duty-grid">
+            <div class="duty-card">
+              <h3>游戏开发</h3>
+              <p>为被忽视的题材、实验性玩法与亚文化社群制作独立游戏。</p>
+            </div>
+            <div class="duty-card">
+              <h3>失传媒体调查</h3>
+              <p>追踪、整理并重新呈现遗失或濒临消失的数字媒体、影像与网络文化遗迹。</p>
+            </div>
+          </div>
+
+          <h2 class="section-title">Contact</h2>
+          <ul class="contact-list">
+              <li>Email: <a href="mailto:1942392307@qq.com">1942392307@qq.com</a></li>
+          </ul>
+        </div>
+      </article>
+    </div>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Forcedra_ / WafiLog.</p>
+  </footer>
+</body>
+</html>
