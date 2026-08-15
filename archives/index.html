@@ -374,6 +374,17 @@
     close.addEventListener('click', closeSidebar);
     overlay.addEventListener('click', closeSidebar);
   })();
+
+  // 按钮点击音效
+  (function() {
+    var clickSound = new Audio('/resources/sounds/button15.wav');
+    document.addEventListener('click', function(e) {
+      if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+        clickSound.currentTime = 0;
+        clickSound.play().catch(function() {});
+      }
+    });
+  })();
 </script>
 
 </body>

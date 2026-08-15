@@ -407,5 +407,18 @@ k                               # 查看调用栈</pre>
   &copy; 2026 WafiLog
 </footer>
 
+<script>
+  // 按钮点击音效
+  (function() {
+    var clickSound = new Audio('/resources/sounds/button15.wav');
+    document.addEventListener('click', function(e) {
+      if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+        clickSound.currentTime = 0;
+        clickSound.play().catch(function() {});
+      }
+    });
+  })();
+</script>
+
 </body>
 </html>
