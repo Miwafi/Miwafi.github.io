@@ -185,7 +185,7 @@
 <main class="container">
   <article>
     <div class="article-header">
-      <h1 class="article-title">追寻起源引擎的光与影</h1>
+      <h1 class="article-title">起源引擎的静态光照是怎么算出来的</h1>
       <div class="article-meta">
         <span>2026-07-27</span>
         <span>·</span>
@@ -197,77 +197,77 @@
 
     <div class="article-content">
 
-      <p>起源引擎（Source Engine）于2000年在SIGGRAPH大会上首次展示，作为GoldSource引擎的继任者，其静态光照系统采用基于辐射度（Radiosity）的预计算方法。本文将从技术层面分析VRAD工具的实现原理和光照贴图的编码方式。</p>
+      <p>起源引擎（Source Engine）在 2000 年的 SIGGRAPH 上第一次亮相，是 GoldSource 的继任者。它的静态光照走的是基于辐射度（Radiosity）的预计算路线——也就是先把光烘进贴图，运行时不再实时算。这篇文章想从实现的角度，把 VRAD 这套工具到底怎么干活、光照贴图又是怎么编码的，尽量讲清楚。</p>
 
       <h2>辐射度光传输方程</h2>
 
-      <p>辐射度算法求解的是<strong>漫反射全局光照</strong>问题。在漫反射条件下，BRDF退化为常数，这使得渲染方程可以简化：</p>
+      <p>辐射度算法要解的其实是<strong>漫反射全局光照</strong>。漫反射时 BRDF 退化成常数，渲染方程也就跟着简化成下面这样：</p>
 
       <p>$$L_o = L_e + \sigma_s \int_A L_i F(x,x') dA(x')$$</p>
 
-      <p>其中σ<sub>s</sub>是漫反射Albedo（在VTF材质中对应"$reflectivity"参数），F是几何项，包含可见性、距离衰减和角度关系。这是一个第二类Fredholm积分方程，无法求得解析解，只能通过数值方法求解。</p>
+      <p>式子里 σ<sub>s</sub> 是漫反射 Albedo（在 VTF 材质里对应 <code>$reflectivity</code> 参数），F 是几何项，把可见性、距离衰减和角度关系都包了进去。这是第二类 Fredholm 积分方程，没有解析解，只能靠数值方法去逼近。</p>
 
       <h2>有限元离散化</h2>
 
-      <p>VRAD采用有限元法（Finite Element Method）将连续的光照方程离散化。具体步骤如下：</p>
+      <p>VRAD 用的是有限元法（Finite Element Method）把连续的光照方程拆开。大致分这么几步：</p>
 
       <ol>
-        <li><strong>面片细分</strong>：将地图中的每个brush表面划分为多个patch面片，通过CreateChildPatch()和SubdividePatch()函数实现。</li>
-        <li><strong>可见性计算</strong>：创建transfer list，通过Ray Casting算法判断哪些面片之间存在光传输路径。可以利用VVIS阶段生成的PVS数据进行粗粒度剔除。</li>
-        <li><strong>空间索引</strong>：使用空间哈希表索引各个面片，这种技术在RTXGI 2.0等现代方案中也被采用。</li>
+        <li><strong>面片细分</strong>：地图里每个 brush 表面都被切成一块块 patch，靠 <code>CreateChildPatch()</code> 和 <code>SubdividePatch()</code> 两个函数完成。</li>
+        <li><strong>可见性计算</strong>：先建一个 transfer list，再用 Ray Casting 判断哪些面片之间真的有光路。VVIS 阶段生成的 PVS 数据可以拿来做个粗筛。</li>
+        <li><strong>空间索引</strong>：面片用空间哈希表来索引，这种思路在 RTXGI 2.0 这类新方案里也还在用。</li>
       </ol>
 
-      <p>离散化后，连续积分转化为线性方程组：</p>
+      <p>离散之后，原来的连续积分就变成了线性方程组：</p>
 
       <p>$$(I - \sigma F)L = L_e$$</p>
 
-      <p>其中F是form factor矩阵，L是待求解的辐射度向量。VRAD最多分配16个线程（threadnum）通过GatherLight()函数并行求解这个方程组。</p>
+      <p>这里 F 是 form factor 矩阵，L 是要求解的辐射度向量。VRAD 最多开 16 个线程（<code>threadnum</code>），通过 <code>GatherLight()</code> 并行地把这方程组解出来。</p>
 
       <h2>Form Factor计算</h2>
 
-      <p>Form Factor是辐射度算法的核心，表示两个面片之间的几何关系。VRAD实现了两种计算方式：</p>
+      <p>Form Factor 是辐射度算法的核心，说白了就是两个面片之间的几何关系。VRAD 里给了两种算的方式：</p>
 
-      <p><strong>面片到微分面片</strong>（FormFactorPolyToDiff）：基于Philip Dutre的Global Illumination Compendium公式81，适用于近距离的精确计算。</p>
+      <p><strong>面片到微分面片</strong>（<code>FormFactorPolyToDiff</code>）：来自 Philip Dutre 那本 Global Illumination Compendium 的公式 81，适合近距离精细算。</p>
 
-      <p><strong>微分面片到微分面片</strong>（FormFactorDiffToDiff）：基于Pat Hanrahan的课程讲义，当距离大于5倍patch尺寸时可以使用近似公式。</p>
+      <p><strong>微分面片到微分面片</strong>（<code>FormFactorDiffToDiff</code>）：基于 Pat Hanrahan 的课件，距离超过 patch 尺寸 5 倍时可以用近似公式。</p>
 
       <h2>光照贴图处理</h2>
 
-      <p>求解完成后，光照贴图仍然是粗糙的方块状。VRAD采用<strong>自适应超采样</strong>进行平滑处理：</p>
+      <p>解完之后，光照贴图还是一块块粗糙的方块，得靠 <strong>自适应超采样</strong> 把它磨平：</p>
 
-      <p>通过ComputeLightmapGradients()计算每个采样点的梯度。如果梯度小于0.0625，说明该点与邻近点变化平缓，不需要超采样；否则执行SupersampleLightAtPoint()进行4x超采样。</p>
+      <p><code>ComputeLightmapGradients()</code> 会先算每个采样点的梯度。梯度小于 0.0625，说明这块地方变化很平缓，没必要再超采样；否则就调用 <code>SupersampleLightAtPoint()</code> 做 4 倍超采样。</p>
 
-      <p>在半条命2的二十周年更新中，Valve首次将线性插值改为双三次插值（Bicubic），使光照过渡更加柔和。这是自2000年以来首次对该算法的调整。</p>
+      <p>到了《半条命2》二十周年更新，Valve 头一回把线性插值换成了双三次插值（Bicubic），光照过渡明显柔和了。这也是 2000 年以来这个算法第一次被动。</p>
 
       <h2>Radiosity Normal Mapping编码</h2>
 
-      <p>传统的光照贴图只存储每个像素的总辐射度，丢失了方向信息。当表面带有法线贴图时，凹凸细节无法得到正确的光照响应。</p>
+      <p>传统光照贴图只存每个像素的总辐射度，方向信息就丢掉了。表面一旦有法线贴图，那些凹凸细节就吃不到正确的光。</p>
 
-      <p>起源引擎采用<strong>Radiosity Normal Mapping</strong>技术（也称为HL2 Basis），将光照投影到三个正交基底上。在runtime阶段，采样法线贴图的normal向量，分别与三个基向量做点积，加权求和得到该点的静态光照：</p>
+      <p>起源引擎用了 <strong>Radiosity Normal Mapping</strong>（也叫 HL2 Basis），把光照投影到三个正交基底上。运行的时候，采样法线贴图里的 normal 向量，分别和三个基向量做点积，加权加起来就是这个点的静态光照：</p>
 
       <p>$$L_{final} = (n \cdot b_0) L_0 + (n \cdot b_1) L_1 + (n \cdot b_2) L_2$$</p>
 
-      <p>这种方法基于半球空间（区别于球谐函数的球空间），能够保留光照的方向性信息，使法线贴图的凹凸细节与静态光照自然结合，呈现自阴影等精细效果。</p>
+      <p>它基于的是半球空间（跟球谐函数用的球空间不一样），能保住光照的方向性，于是法线贴图的凹凸和静态光照就能自然叠在一起，自阴影这类细节也出来了。</p>
 
       <h2>性能特征</h2>
 
-      <p>VRAD的编译时间与以下因素相关：</p>
+      <p>VRAD 的编译时间主要跟这几样有关：</p>
 
       <ul>
-        <li><strong>面片数量</strong>：patch数量决定线性方程组的维度。</li>
-        <li><strong>反弹次数</strong>：多次反弹需要迭代求解。</li>
-        <li><strong>光照贴图精度</strong>：lightmap scale参数直接影响采样密度。</li>
+        <li><strong>面片数量</strong>：patch 越多，线性方程组维度越大。</li>
+        <li><strong>反弹次数</strong>：多反弹就得反复迭代。</li>
+        <li><strong>光照贴图精度</strong>：<code>lightmap scale</code> 参数直接决定采样密度。</li>
       </ul>
 
-      <p>如果地图存在leak（泄漏），VRAD会为无限大的外部空间计算光照，编译时间急剧膨胀。多线程性能在带有-final参数的室外场景中存在瓶颈，Valve在SDK 2013中提供了修复补丁。</p>
+      <p>地图要是出现 leak（泄漏），VRAD 会去给一个无限大的外部空间算光照，编译时间一下就爆了。多线程在带 <code>-final</code> 的室外场景里还有瓶颈，这个 Valve 在 SDK 2013 里给了个补丁。</p>
 
-      <p>社区存在GPU VRAD项目尝试加速编译过程，但存在较多问题。起源2引擎的VRAD3转向Path Tracing框架，并提供Vulkan硬件光追扩展，大幅缩短了复杂场景的编译时间。</p>
+      <p>社区里有人做 GPU VRAD 想加速，但问题不少。到了起源2，VRAD3 转去了 Path Tracing 框架，还带了 Vulkan 硬件光追扩展，复杂场景编译时间缩了一大截。</p>
 
       <h2>技术限制</h2>
 
-      <p>辐射度算法假设所有表面都是理想漫反射体，无法处理镜面反射和折射。对于高频光照细节（如尖锐的阴影边缘），需要增加patch密度或转向其他方法（如光子映射）。</p>
+      <p>辐射度算法默认所有表面都是理想漫反射体，镜面反射和折射它就管不了了。碰到高频光照细节（比如很硬的阴影边缘），要么把 patch 密度提上去，要么换别的方法，比如光子映射。</p>
 
-      <p>光照贴图在运行时是静态的，无法响应动态光源变化。移动的光源（如手电筒）需要额外的动态光照系统支持。</p>
+      <p>另外光照贴图在运行期是死的，跟不上动态光源的变化。像手电筒这种会动的光，得另接一套动态光照系统才行。</p>
 
       <h2>参考文献</h2>
 

@@ -197,7 +197,7 @@
 
     <div class="article-content">
 
-      <p>本文基于微软官方 WDK 文档与我的排错经验，覆盖 <strong>VS2022 组件选择、WDK 安装后 ntddk.h 找不到的根因与修复、最小 KMDF 驱动编写、编译部署与双机调试</strong>，所有步骤均可在 Windows 11 + VS2022 环境下复现。</p>
+      <p>这篇笔记整理自微软官方 WDK 文档和我自己踩过的坑，覆盖 <strong>VS2022 该装哪些组件、WDK 装完却找不到 ntddk.h 到底为什么、最小 KMDF 驱动怎么写、编译部署和双机调试</strong>。我在 Windows 11 + VS2022 上都跑通了一遍，照着做应该没问题。</p>
 
       <blockquote>
         <p>微软当前推荐用于生产的组合是 <strong>Visual Studio 2022 + WDK 26100.6584</strong>。WDK 从 10.0.26100.1 起以 NuGet 包和 VSIX 扩展形式分发，VS2022 安装时必须在"单个组件"中手动勾选 WDK 与对应的 Spectre-mitigated 库，否则项目模板和头文件都不会就位。</p>
@@ -205,7 +205,7 @@
 
       <h2>一、VS2022 工作负载与单个组件</h2>
 
-      <p>启动 Visual Studio Installer，选择"修改"已安装的 VS2022，按以下清单勾选：</p>
+      <p>打开 Visual Studio Installer，对已经装好的 VS2022 点「修改」，然后照着下面这个清单勾：</p>
 
       <ol>
         <li><strong>工作负载</strong>：勾选「使用 C++ 的桌面开发」。</li>
@@ -224,9 +224,9 @@
 
       <h2>二、ntddk.h 找不到的根因与修复</h2>
 
-      <p>即便在 VS Installer 中勾选了 WDK，编译时仍可能报 <code>C1083: Cannot open include file: 'ntddk.h'</code>。这不是 WDK 没装，而是<strong>WDK 的 Visual Studio 集成（VSIX 扩展）没有真正生效</strong>，或者项目所指向的 Windows SDK 版本下不存在 <code>km</code> 文件夹。</p>
+      <p>有时明明在 VS Installer 里勾了 WDK，编译还是报 <code>C1083: Cannot open include file: 'ntddk.h'</code>。这通常不是 WDK 没装，而是<strong>WDK 的 Visual Studio 集成（VSIX 扩展）压根没真正生效</strong>，或者项目指向的那个 Windows SDK 版本下面压根没有 <code>km</code> 文件夹。</p>
 
-      <h3>根因清单</h3>
+      <h3>可能的根因</h3>
 
       <ul>
         <li><strong>WDK VSIX 未安装</strong>：VS Installer 勾选 WDK 后，底层需要把 <code>WDK.vsix</code> 注册进 VS2022。集成未完全时，项目模板和头文件路径都不会注入。</li>
@@ -236,7 +236,7 @@
 
       <h3>解决方案：从微软官网下载 WDK 独立安装包</h3>
 
-      <p>这是最彻底、也是微软官方推荐的修复路径——绕过 VS Installer 的组件勾选，直接用 WDK 独立安装包完成注册：</p>
+      <p>最稳的办法，也是微软官方推荐的做法，是直接绕开 VS Installer 的勾选，用 WDK 独立安装包来注册：</p>
 
       <ol>
         <li>访问微软官方 <a href="https://learn.microsoft.com/en-us/windows-hardware/drivers/other-wdk-downloads">Download WDK</a> 页面，下载 <strong>WDK 26100.6584</strong> 安装包（wdksetup.exe）。</li>
@@ -264,7 +264,7 @@ C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\shared</pre>
       </ol>
 
       <blockquote>
-        <p>排错口诀：<strong>先看 <code>Include\km</code> 文件夹存不存在，再看项目 Windows SDK 版本指没指到它，最后才考虑手动加包含路径</strong>。绝大多数「ntddk.h 找不到」都是前三步之一出了问题。</p>
+        <p>排错思路其实就一句：<strong>先看 <code>Include\km</code> 文件夹在不在，再看项目 Windows SDK 版本有没有指到它，最后才轮到手动加包含路径</strong>。我见过的「ntddk.h 找不到」，几乎都出在前头那几步。</p>
       </blockquote>
 
       <h2>三、创建第一个 KMDF 驱动</h2>
@@ -376,7 +376,7 @@ KmdfHelloWorldEvtDeviceAdd(
 
       <h2>六、双机调试环境</h2>
 
-      <p>强烈建议使用<strong>虚拟机作为目标机</strong>进行调试，避免本机蓝屏。主流方案有两种：</p>
+      <p>我一般拿<strong>虚拟机当目标机</strong>来调，省得本机直接蓝屏。常用的就两种：</p>
 
       <ul>
         <li><strong>网络调试（推荐）</strong>：宿主机与目标虚拟机通过网络直连，使用 WinDbg 的 <code>net</code> 协议。</li>
@@ -397,7 +397,7 @@ k                               # 查看调用栈</pre>
       <p>驱动加载后，<code>KdPrintEx</code> 的输出可通过 <strong>DebugView</strong>（勾选「Capture Kernel」）或 WinDbg 的调试窗口查看。</p>
 
       <blockquote>
-        <p>内核驱动开发中，一个未处理的 IRQL 违规或错误自旋锁就可能导致 <code>0x000000D1</code> 蓝屏。<strong>每次只改一个点、用 WinDbg 单步跟进去</strong>，比一次性堆砌功能更有效率。</p>
+        <p>内核驱动这东西，一个没处理好的 IRQL 违规或者自旋锁用错，就可能直接 <code>0x000000D1</code> 蓝屏。我的习惯是<strong>每次只动一个点，用 WinDbg 单步跟进去看</strong>——一次性堆太多功能，真出事都不知道该怪哪段。</p>
       </blockquote>
 
       <h2>参考文献</h2>
