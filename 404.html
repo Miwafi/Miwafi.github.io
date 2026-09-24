@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<meta name="description" content="WafiLog 404，页面未找到。">
+<title>404 - WafiLog</title>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #fff;
+    color: #111;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .container {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  /* Header */
+  header {
+    padding: 48px 0 0;
+    text-align: center;
+  }
+  .site-title {
+    display: inline-block;
+    background: #111;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    padding: 10px 28px;
+    text-decoration: none;
+    transition: opacity .2s;
+  }
+  .site-title:hover { opacity: .8; }
+  nav {
+    margin-top: 24px;
+    display: flex;
+    justify-content: center;
+    gap: 2px;
+    font-size: 14px;
+  }
+  nav a {
+    color: #888;
+    text-decoration: none;
+    padding: 6px 16px;
+    transition: color .2s;
+  }
+  nav a:hover { color: #111; }
+
+  /* Main */
+  main {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 64px 24px;
+  }
+
+  .notfound {
+    text-align: center;
+  }
+  .notfound-code {
+    font-size: 96px;
+    font-weight: 800;
+    letter-spacing: 4px;
+    color: #111;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    user-select: none;
+  }
+  .notfound-code span {
+    display: inline-block;
+    animation: blink 2.4s steps(1) infinite;
+  }
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .15; }
+  }
+  .notfound-title {
+    margin-top: 20px;
+    font-size: 20px;
+    font-weight: 700;
+  }
+  .notfound-desc {
+    margin-top: 10px;
+    font-size: 14px;
+    color: #888;
+    max-width: 420px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .notfound-actions {
+    margin-top: 28px;
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .btn {
+    display: inline-block;
+    font-size: 14px;
+    text-decoration: none;
+    padding: 10px 24px;
+    transition: opacity .2s;
+  }
+  .btn-primary {
+    background: #111;
+    color: #fff;
+    font-weight: 600;
+  }
+  .btn-primary:hover { opacity: .8; }
+  .btn-ghost {
+    color: #888;
+    border: 1px solid #ddd;
+  }
+  .btn-ghost:hover {
+    color: #111;
+    border-color: #111;
+  }
+  .notfound-hint {
+    margin-top: 36px;
+    font-size: 12px;
+    color: #ccc;
+  }
+  .notfound-hint a {
+    color: #bbb;
+    text-decoration: none;
+    border-bottom: 1px dotted #ddd;
+    transition: color .2s;
+  }
+  .notfound-hint a:hover { color: #111; }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    padding: 32px 0 40px;
+    font-size: 12px;
+    color: #ccc;
+    border-top: 1px solid #f5f5f5;
+  }
+
+  @media (max-width: 520px) {
+    header { padding-top: 32px; }
+    .notfound-code { font-size: 72px; }
+    main { padding: 40px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a href="/" class="site-title">WAFILOG</a>
+  <nav>
+    <a href="/">首页</a>
+    <a href="/archives/">归档</a>
+    <a href="/friends/">友链</a>
+  </nav>
+</header>
+
+<main class="container">
+  <div class="notfound">
+    <div class="notfound-code">4<span>0</span>4</div>
+    <h1 class="notfound-title">你似乎掉进了虚空</h1>
+    <p class="notfound-desc">这个页面不存在，或者已经被移出了地图的边界。它不会被渲染出来。</p>
+    <div class="notfound-actions">
+      <a href="/" class="btn btn-primary">返回首页</a>
+      <a href="/archives/" class="btn btn-ghost">浏览归档</a>
+    </div>
+    <p class="notfound-hint">或者从最近的文章开始：<a href="/2026/08/16/WHY_Wired/">起源引擎的怪异感从何而来</a></p>
+  </div>
+</main>
+
+<footer class="container">
+  WafiLog
+</footer>
+
+<script>
+  (function() {
+    var zero = document.querySelector('.notfound-code span');
+    if (!zero) return;
+    setInterval(function() {
+      if (Math.random() < 0.2) {
+        zero.style.animationDuration = (1.6 + Math.random() * 2.4).toFixed(2) + 's';
+      }
+    }, 3000);
+  })();
+</script>
+
+</body>
+</html>
