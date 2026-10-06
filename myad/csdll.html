@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="CSDLL：开源的 CS2 游戏逆向实例，仅供学习研究。">
+<meta name="robots" content="noindex">
+<title>CSDLL - WafiLog</title>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #fff;
+    color: #111;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.6;
+  }
+
+  .container {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  /* Header */
+  header {
+    padding: 48px 0 0;
+    text-align: center;
+  }
+  .site-title {
+    display: inline-block;
+    background: #111;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    padding: 10px 28px;
+    text-decoration: none;
+    transition: opacity .2s;
+  }
+  .site-title:hover { opacity: .8; }
+  nav {
+    margin-top: 24px;
+    display: flex;
+    justify-content: center;
+    gap: 2px;
+    font-size: 14px;
+  }
+  nav a {
+    color: #888;
+    text-decoration: none;
+    padding: 6px 16px;
+    transition: color .2s;
+  }
+  nav a:hover { color: #111; }
+
+  /* Main */
+  main {
+    padding: 56px 0 80px;
+  }
+
+  .page-tag {
+    display: inline-block;
+    font-size: 12px;
+    color: #999;
+    border: 1px solid #e5e5e5;
+    border-radius: 2px;
+    padding: 1px 8px;
+    margin-bottom: 16px;
+  }
+  h1.page-title {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: .5px;
+    line-height: 1.4;
+  }
+  .page-sub {
+    margin-top: 10px;
+    font-size: 15px;
+    color: #888;
+  }
+
+  .content {
+    margin-top: 40px;
+    font-size: 15px;
+    color: #333;
+  }
+  .content p {
+    margin-bottom: 14px;
+  }
+  .content h2 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #111;
+    margin: 32px 0 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #eee;
+  }
+  .content ul {
+    list-style: none;
+    margin: 0 0 14px 2px;
+  }
+  .content ul li {
+    position: relative;
+    padding-left: 16px;
+    margin-bottom: 6px;
+    font-size: 14px;
+    color: #555;
+  }
+  .content ul li::before {
+    content: "-";
+    position: absolute;
+    left: 0;
+    color: #bbb;
+  }
+  .content code {
+    font-family: Consolas, Monaco, monospace;
+    font-size: 13px;
+    background: #f5f5f5;
+    padding: 1px 6px;
+    border-radius: 2px;
+  }
+
+  /* Download */
+  .download-box {
+    margin-top: 32px;
+    padding: 24px;
+    border: 1px solid #eee;
+    background: #fafafa;
+  }
+  .download-file {
+    font-family: Consolas, Monaco, monospace;
+    font-size: 14px;
+    color: #111;
+    font-weight: 600;
+  }
+  .download-meta {
+    margin-top: 4px;
+    font-size: 12px;
+    color: #999;
+  }
+  .download-btn {
+    display: inline-block;
+    margin-top: 16px;
+    background: #111;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: .5px;
+    padding: 10px 28px;
+    text-decoration: none;
+    transition: opacity .2s;
+  }
+  .download-btn:hover { opacity: .8; }
+
+  /* Disclaimer */
+  .disclaimer {
+    margin-top: 48px;
+    padding: 20px 24px;
+    border: 1px solid #eee;
+    border-left: 3px solid #111;
+    font-size: 13px;
+    color: #666;
+    line-height: 1.8;
+  }
+  .disclaimer h2 {
+    font-size: 14px;
+    font-weight: 700;
+    color: #111;
+    margin: 0 0 8px;
+    padding: 0;
+    border: none;
+  }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    padding: 32px 0 80px;
+    font-size: 12px;
+    color: #ccc;
+    border-top: 1px solid #f5f5f5;
+  }
+  footer a {
+    color: #ccc;
+    text-decoration: none;
+    transition: color .2s;
+  }
+  footer a:hover { color: #111; }
+
+  @media (max-width: 520px) {
+    header { padding-top: 32px; }
+    .container { padding: 0 16px; }
+    main { padding-top: 40px; }
+    h1.page-title { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a href="/" class="site-title">WAFILOG</a>
+  <nav>
+    <a href="/">首页</a>
+    <a href="/archives/">归档</a>
+    <a href="/friends/">友链</a>
+  </nav>
+</header>
+
+<main class="container">
+  <h1 class="page-title">MifiInj：开源的CS2游戏逆向实例</h1>
+  <p class="page-sub">一个开源的CS2外部实例项目</p>
+
+  <div class="content">
+    <h2>这是什么</h2>
+    <p>MifiInj 是一个<strong>开源的CS2外部实例</strong>，完整展示了从模块基址定位、内存读写到功能实现的基础链路，适合对游戏逆向工程感兴趣的开发者入门学习。</p>
+
+    <div class="download-box">
+      <div class="download-file">MifiInj.dll</div>
+      <div class="download-meta">x64 · Windows</div>
+      <a class="download-btn" href="/resources/dll/MifiInj.dll" download>下载 DLL</a>
+    </div>
+
+    <div class="disclaimer">
+      <h2>声明：合理使用范围</h2>
+      本项目及其产物<strong>仅供学习与研究</strong>，用于理解 Windows 注入机制、游戏内存结构与反作弊原理。请勿将其用于任何破坏游戏公平性、违反用户协议或法律法规的用途；由此产生的一切后果（包括但不限于账号封禁）由使用者自行承担。请仅在<strong>本地、单机、自建环境</strong>中运行本示例，下载即视为已知悉并同意上述声明。
+    </div>
+  </div>
+</main>
+
+<footer class="container">
+  <a href="/">WafiLog</a>
+</footer>
+
+</body>
+</html>

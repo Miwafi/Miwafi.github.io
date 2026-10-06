@@ -249,6 +249,11 @@
     color: #ccc;
     border-top: 1px solid #f5f5f5;
   }
+  .moe-counter {
+    display: block;
+    margin: 0 auto 32px;
+    image-rendering: pixelated;
+  }
   .hidden-portal {
     color: #ccc;
     text-decoration: none;
@@ -340,6 +345,52 @@
   }
   .sidebar-close:hover { color: #111; }
 
+  /* Floating Ad */
+  .float-ad {
+    position: fixed;
+    bottom: 32px;
+    left: 32px;
+    z-index: 90;
+    background: #111;
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(0,0,0,.25);
+  }
+  .float-ad a {
+    display: block;
+    padding: 12px 18px;
+    text-decoration: none;
+    color: #fff;
+  }
+  .float-ad-tag {
+    display: inline-block;
+    font-size: 10px;
+    line-height: 1.4;
+    padding: 0 5px;
+    border: 1px solid rgba(255,255,255,.4);
+    border-radius: 2px;
+    color: rgba(255,255,255,.7);
+    margin-bottom: 6px;
+  }
+  .float-ad-text {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: .5px;
+  }
+  .float-ad-close {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: none;
+    border: none;
+    color: rgba(255,255,255,.5);
+    font-size: 12px;
+    cursor: pointer;
+    padding: 4px;
+    line-height: 1;
+  }
+  .float-ad-close:hover { color: #fff; }
+
   /* Mobile */
   @media (max-width: 600px) {
     .profile {
@@ -375,6 +426,7 @@
     .post-body .post-title { font-size: 15px; }
     .sidebar-toggle { bottom: 20px; right: 20px; }
     .sidebar { width: 260px; right: -260px; }
+    .float-ad { bottom: 20px; left: 20px; }
   }
 </style>
 </head>
@@ -424,6 +476,12 @@
       </div>
     </div>
   </div>
+
+  <!-- Counter Section -->
+  <div class="section-header">
+    <h2>访问计数</h2>
+  </div>
+  <img class="moe-counter" src="https://count.getloli.com/@wfghb?theme=booru-lewd&padding=7&offset=0&align=top&scale=1&pixelated=1&darkmode=auto" alt="Moe Counter" loading="lazy">
 
   <!-- Posts Section -->
   <div class="section-header">
@@ -509,6 +567,16 @@
   WafiLog
 </footer>
 
+<!-- Floating Ad -->
+<div class="float-ad" id="floatAd">
+  <button class="float-ad-close" id="floatAdClose" aria-label="关闭广告">✕</button>
+  <!-- 广告文案可在此修改 -->
+  <a href="https://miwafi.github.io/myad/csdll.html" target="_blank" rel="noopener">
+    <span class="float-ad-tag">宣传</span>
+    <span class="float-ad-text">要看看我写的CS2外部吗 →</span>
+  </a>
+</div>
+
 <!-- Sidebar Toggle -->
 <button class="sidebar-toggle" id="sidebarToggle" aria-label="打开侧边栏">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -552,6 +620,20 @@
     toggle.addEventListener('click', open);
     close.addEventListener('click', closeSidebar);
     overlay.addEventListener('click', closeSidebar);
+  })();
+
+  (function() {
+    var ad = document.getElementById('floatAd');
+    var close = document.getElementById('floatAdClose');
+    // 每个会话只显示一次
+    if (sessionStorage.getItem('floatAdShown')) {
+      ad.style.display = 'none';
+      return;
+    }
+    sessionStorage.setItem('floatAdShown', '1');
+    close.addEventListener('click', function() {
+      ad.style.display = 'none';
+    });
   })();
 
 </script>
